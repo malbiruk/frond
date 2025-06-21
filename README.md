@@ -1,6 +1,6 @@
 # frond
 ## about
-`frond` 🌿 -- TUI LLM chat client with branching and context control, built in Rust.
+`frond` 🌿 -- TUI LLM chat client with branching and complete context control, built in Rust.
 ## idea
 1. **full context control**
 	- you choose what the LLM sees. edit, hide, reorder messages. switch roles (user/assistant), split or merge messages.
