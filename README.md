@@ -74,4 +74,5 @@ heavily inspired by zed’s text threads — but zed has no branching or extensi
 	   - keeps them in tree, out of prompt
 	- optional links/mentions (reference other trees/branches, not sent to llm)
 - **later ideas**
+	- RAG (chat with documents)
 	- mcps and agentic capabilities (multi-chain or planner support)
