@@ -29,7 +29,7 @@ usual web apps:
 - full edit history and checkpoints
 - proper search (by folder/dialogue/branch/message, filtered by tag etc.)
 
-it’s also fast, and TUI makes it easy to pass file structures or context to the LLM.
+it’s also fast, and TUI makes it easy to pass folder structures, files, or other context to the LLM.
 
 heavily inspired by zed’s text threads — but zed has no branching or extensive history organization features, and web UIs don’t give you this level of control.
 
@@ -37,18 +37,18 @@ heavily inspired by zed’s text threads — but zed has no branching or extensi
 
 - **core**
 	- fully editable context (user and assistant messages)
-	    switch roles, split/merge messages, reorder
+	   - switch roles, split/merge messages, reorder
 	- branching conversations
-	    fork from any message, navigate trees and branches
+	   - fork from any message, navigate trees and branches
 	- token count per branch
-	    know how much context you’re sending
+	   - know how much context you’re sending
 - **editing & history**
 	- ctrl+z / ctrl+shift+z for undo/redo
 	- per-message edit history (if not last)
 	- full tree history (snapshots / checkpoints)
 	- clone, detach, attach branches
 	- save trees or branches to new dialogue
-	- import trees/branches/messages from other dialogues, or mention
+	- import or mention other dialogues/trees/branches/messages
 - **commands & input**
 	- special commands: `/file`, `/tree`, `/prompt`, `/now`, `/fetch`
 	- support for images/files (not just text)
@@ -57,21 +57,21 @@ heavily inspired by zed’s text threads — but zed has no branching or extensi
 	- copy sections between \`\`\` and \`\`\`
 - **organization**
 	- saved trees and branches
-	    pins, tags + folder-based organization
+	   - pins, tags + folder-based organization
 	- create a dialogue from folder/tag
-	    shows as multiple orphaned trees
+	   - shows as multiple orphaned trees
 	- trash system (per tree, branch, or full dialogue)
 	- my prompts (reusable prompt library)
 - **navigation & ui**
 	- search by folder, dialogue, branch, message
-	    filter by tag, search contents or titles
+	   - filter by tag, search contents or titles
 	- live updates across sessions
-	    editing one view updates others (sqlite-based)
+	   - editing one view updates others (sqlite-based)
 	- gui tabs & windows (planned)
-	    tui is split-friendly already, gui will support tabbed workflows
+	   - tui is split-friendly already, gui will support tabbed workflows
 - **context visibility**
 	- hide messages from llm (for notes or pruning)
-	    keeps them in tree, out of prompt
-	- optional links (reference other trees/branches, not sent to llm)
+	   - keeps them in tree, out of prompt
+	- optional links/mentions (reference other trees/branches, not sent to llm)
 - **later ideas**
 	- mcps and agentic capabilities (multi-chain or planner support)
