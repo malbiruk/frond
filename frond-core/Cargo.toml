@@ -1,0 +1,13 @@
+[package]
+name = "frond-core"
+version = "0.1.0"
+authors = ["Klim Kostiuk <2601074@gmail.com>"]
+license = "MIT"
+edition = "2024"
+readme = "README.md"
+
+[dependencies]
+paste = "1.0.15"
+serde = { version = "1.0.219", features = ["derive"] }
+thiserror = "2.0.12"
+uuid = { version = "1.17.0", features = ["v4"] }

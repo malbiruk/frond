@@ -1,0 +1,10 @@
+[package]
+name = "frond"
+version = "0.1.0"
+authors = ["Klim Kostiuk <2601074@gmail.com>"]
+license = "MIT"
+edition = "2024"
+readme = "README.md"
+
+[dependencies]
+ratatui = "0.29.0"
