@@ -22,4 +22,8 @@ impl Branch {
         let messages = self.messages[..=idx].to_vec();
         Ok(Branch::from_messages(new_name, messages))
     }
+
+    pub fn llm_context(&self) -> Vec<&Message> {
+        self.messages().iter().filter(|m| !m.is_hidden()).collect()
+    }
 }

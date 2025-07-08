@@ -32,16 +32,18 @@ fn can_fork_branch_from_message() {
     assert_eq!(fork.name(), "alt");
 }
 
-// #[test]
-// fn hidden_messages_are_excluded_from_context() {
-//     let mut branch = Branch::new("main");
-//     branch.add_message(Role::User, "Visible");
-//     branch.add_message(Role::User, "Hidden");
-//     branch.hide_message(1);
-//     let context = branch.llm_context();
-//     assert_eq!(context.len(), 1);
-//     assert_eq!(context[0].content, "Visible");
-// }
+#[test]
+fn hidden_messages_are_excluded_from_context() {
+    let mut branch = Branch::new("main");
+    branch.add_message(Message::new("Visible", Role::User));
+    branch.add_message(Message::new("Hidden", Role::User));
+
+    branch.messages_mut()[1].hide();
+
+    let context = branch.llm_context();
+    assert_eq!(context.len(), 1);
+    assert_eq!(context[0].content(), "Visible");
+}
 
 // #[test]
 // fn can_merge_and_split_messages() {

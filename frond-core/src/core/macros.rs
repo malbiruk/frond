@@ -59,7 +59,7 @@ macro_rules! define_core_entity {
                     self.$child_plural.push(child);
                 }
 
-                pub fn [<add_ $child_plural s>](&mut self, children: Vec<$child>) {
+                pub fn [<add_ $child_plural>](&mut self, children: Vec<$child>) {
                     self.$child_plural.extend(children);
                 }
 
@@ -79,8 +79,12 @@ macro_rules! define_core_entity {
                     self.name = name.into();
                 }
 
-                pub fn update_description(&mut self, description: Option<impl Into<String>>) {
-                    self.description = description.map(|d| d.into());
+                pub fn set_description(&mut self, description: impl Into<String>) {
+                    self.description = Some(description.into());
+                }
+
+                pub fn clear_description(&mut self) {
+                    self.description = None;
                 }
             }
         }
