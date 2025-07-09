@@ -1,10 +1,7 @@
-#[macro_use]
-mod macros;
-
 use frond_core::{Branch, Message, Role};
 use uuid::Uuid;
 
-test_core_entity!(
+crate::test_core_entity!(
     Branch,
     message,
     messages,

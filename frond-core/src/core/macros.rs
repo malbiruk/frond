@@ -4,6 +4,7 @@ macro_rules! define_core_entity {
         $(#[$meta:meta])*
         $vis:vis struct $name:ident<$child:ty> {
             $child_singular:ident, $child_plural:ident
+            $(, extra_fields { $(( $field:ident : $ty:ty, $default:expr )),* $(,)? } )?
         }
     ) => {
         $(#[$meta])*
@@ -13,6 +14,7 @@ macro_rules! define_core_entity {
             name: String,
             description: Option<String>,
             $child_plural: Vec<$child>,
+            $($($field: $ty,)*)?
         }
 
         paste::paste! {
@@ -23,6 +25,7 @@ macro_rules! define_core_entity {
                         name: name.into(),
                         description: None,
                         $child_plural: Vec::new(),
+                        $($($field: $default,)*)?
                     }
                 }
 
@@ -32,6 +35,7 @@ macro_rules! define_core_entity {
                         name: name.into(),
                         description: None,
                         $child_plural: children,
+                        $($($field: $default,)*)?
                     }
                 }
 

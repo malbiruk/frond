@@ -1,10 +1,7 @@
-#[macro_use]
-mod macros;
-
 use frond_core::{Branch, Message, Role, Tree, TreeError};
 use uuid::Uuid;
 
-test_core_entity!(Tree, branch, branches, Branch, Branch::new("test"));
+crate::test_core_entity!(Tree, branch, branches, Branch, Branch::new("test"));
 
 #[test]
 fn creates_tree_from_branch() {

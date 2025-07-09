@@ -1,9 +1,6 @@
-#[macro_use]
-mod macros;
-
 use frond_core::{Dialogue, Tree};
 
-test_core_entity!(Dialogue, tree, trees, Tree, Tree::new("test"));
+crate::test_core_entity!(Dialogue, tree, trees, Tree, Tree::new("test"));
 
 #[test]
 fn creates_dialogue_from_tree() {

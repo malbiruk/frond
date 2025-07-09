@@ -2,7 +2,12 @@ use super::tree::Tree;
 
 define_core_entity! {
     pub struct Dialogue<Tree> {
-        tree, trees
+        tree, trees,
+        extra_fields {
+            (is_archived: bool, false),
+            (is_trashed: bool, false),
+            (tags: Vec<String>, Vec::new())
+        }
     }
 }
 
@@ -13,6 +18,9 @@ impl Dialogue {
             name: child.name().to_string(),
             description: None,
             trees: vec![child],
+            is_archived: false,
+            is_trashed: false,
+            tags: Vec::new(),
         }
     }
 }
