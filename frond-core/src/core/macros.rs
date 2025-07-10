@@ -8,7 +8,7 @@ macro_rules! define_core_entity {
         }
     ) => {
         $(#[$meta])*
-        #[derive(Debug, Clone, PartialEq, Eq)]
+        #[derive(Debug, Clone)]
         $vis struct $name {
             id: uuid::Uuid,
             name: String,
