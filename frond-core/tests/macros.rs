@@ -60,6 +60,47 @@ macro_rules! test_core_entity {
                 e.clear_description();
                 assert_eq!(e.description(), None);
             }
+
+            #[test]
+            fn [<gets_ $child_singular _by_id>]() {
+                let mut e = $entity::new("foo");
+                let c: $child_ty = $child_new;
+                let id = c.id();
+                e.[<add_ $child_singular>](c.clone());
+                let found = e.[<get_ $child_singular _by_id>](id);
+                assert!(found.is_some());
+                assert_eq!(found.unwrap().id(), id);
+                assert_eq!(found.unwrap(), &c);
+                let not_found = e.[<get_ $child_singular _by_id>](uuid::Uuid::new_v4());
+                assert!(not_found.is_none());
+            }
+
+            #[test]
+            fn [<gets_ $child_singular _by_id_mut>]() {
+                let mut e = $entity::new("foo");
+                let c: $child_ty = $child_new;
+                let id = c.id();
+                e.[<add_ $child_singular>](c.clone());
+                {
+                    let found_mut = e.[<get_ $child_singular _by_id_mut>](id);
+                    assert!(found_mut.is_some());
+                    // Optionally mutate here if $child_ty supports it
+                }
+                let not_found_mut = e.[<get_ $child_singular _by_id_mut>](uuid::Uuid::new_v4());
+                assert!(not_found_mut.is_none());
+            }
+
+            #[test]
+            fn [<gets_ $child_singular _index_by_id>]() {
+                let mut e = $entity::new("foo");
+                let c: $child_ty = $child_new;
+                let id = c.id();
+                e.[<add_ $child_singular>](c.clone());
+                let idx = e.[<get_ $child_singular _index_by_id>](id);
+                assert_eq!(idx, Some(0));
+                let not_found = e.[<get_ $child_singular _index_by_id>](uuid::Uuid::new_v4());
+                assert!(not_found.is_none());
+            }
         }
     };
 }

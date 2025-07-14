@@ -14,3 +14,11 @@ pub enum TreeError {
     #[error(transparent)]
     Branch(#[from] BranchError),
 }
+
+#[derive(Debug, Error)]
+pub enum DialogueError {
+    #[error("Tree with id {0} not found in dialogue")]
+    TreeNotFound(Uuid),
+    #[error(transparent)]
+    Tree(#[from] TreeError),
+}

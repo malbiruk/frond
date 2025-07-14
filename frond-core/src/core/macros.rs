@@ -8,7 +8,7 @@ macro_rules! define_core_entity {
         }
     ) => {
         $(#[$meta])*
-        #[derive(Debug, Clone)]
+        #[derive(Debug, Clone, PartialEq)]
         $vis struct $name {
             id: uuid::Uuid,
             name: String,
@@ -57,6 +57,18 @@ macro_rules! define_core_entity {
 
                 pub fn [<$child_plural _mut>](&mut self) -> &mut [$child] {
                     &mut self.$child_plural
+                }
+
+                pub fn [<get_ $child_singular _by_id>](&self, child_id: uuid::Uuid) -> Option<&$child> {
+                    self.$child_plural.iter().find(|c| c.id() == child_id)
+                }
+
+                pub fn [<get_ $child_singular _by_id_mut>](&mut self, child_id: uuid::Uuid) -> Option<&mut $child> {
+                    self.$child_plural.iter_mut().find(|c| c.id() == child_id)
+                }
+
+                pub fn [<get_ $child_singular _index_by_id>](&self, child_id: uuid::Uuid) -> Option<usize> {
+                    self.$child_plural.iter().position(|c| c.id() == child_id)
                 }
 
                 pub fn [<add_ $child_singular>](&mut self, child: $child) {
