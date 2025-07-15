@@ -2,6 +2,8 @@ use super::branch::Branch;
 use super::error::TreeError;
 use uuid::Uuid;
 
+define_collection_wrapper!(Branches, Branch);
+
 define_core_entity! {
     pub struct Tree<Branch> {
         branch, branches
@@ -14,7 +16,7 @@ impl Tree {
             id: uuid::Uuid::new_v4(),
             name: child.name().to_string(),
             description: None,
-            branches: vec![child],
+            branches: Branches::from_vec(vec![child]),
         }
     }
 
@@ -26,8 +28,7 @@ impl Tree {
     ) -> Result<&Branch, TreeError> {
         let source_branch = self
             .branches
-            .iter()
-            .find(|b| b.id() == source_branch_id)
+            .get_by_id(source_branch_id)
             .ok_or(TreeError::BranchNotFound(source_branch_id))?;
 
         let fork = source_branch
@@ -35,6 +36,9 @@ impl Tree {
             .map_err(TreeError::Branch)?;
 
         self.branches.push(fork);
-        Ok(self.branches.last().expect("Just pushed, so must exist"))
+        Ok(self
+            .branches
+            .get(self.branches.len() - 1)
+            .expect("Just pushed, so must exist"))
     }
 }

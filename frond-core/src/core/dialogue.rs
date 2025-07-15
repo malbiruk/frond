@@ -2,6 +2,8 @@ use super::tree::Tree;
 use crate::actions::Action;
 use crate::core::error::DialogueError;
 
+define_collection_wrapper!(Trees, Tree);
+
 define_core_entity! {
     pub struct Dialogue<Tree> {
         tree, trees,
@@ -22,7 +24,7 @@ impl Dialogue {
             id: uuid::Uuid::new_v4(),
             name: child.name().to_string(),
             description: None,
-            trees: vec![child],
+            trees: Trees::from_vec(vec![child]),
             is_archived: false,
             is_trashed: false,
             tags: Vec::new(),
@@ -35,7 +37,7 @@ impl Dialogue {
 impl Dialogue {
     // branch helper methods
     pub fn get_branch_by_id(&self, branch_id: uuid::Uuid) -> Option<&super::branch::Branch> {
-        for tree in &self.trees {
+        for tree in self.trees.iter() {
             if let Some(branch) = tree.get_branch_by_id(branch_id) {
                 return Some(branch);
             }
@@ -47,7 +49,7 @@ impl Dialogue {
         &mut self,
         branch_id: uuid::Uuid,
     ) -> Option<&mut super::branch::Branch> {
-        for tree in &mut self.trees {
+        for tree in self.trees.iter_mut() {
             if let Some(branch) = tree.get_branch_by_id_mut(branch_id) {
                 return Some(branch);
             }
@@ -57,8 +59,8 @@ impl Dialogue {
 
     // message helper methods
     pub fn get_message_by_id(&self, message_id: uuid::Uuid) -> Option<&super::message::Message> {
-        for tree in &self.trees {
-            for branch in tree.branches() {
+        for tree in self.trees.iter() {
+            for branch in tree.branches().iter() {
                 if let Some(message) = branch.get_message_by_id(message_id) {
                     return Some(message);
                 }
@@ -71,8 +73,8 @@ impl Dialogue {
         &mut self,
         message_id: uuid::Uuid,
     ) -> Option<&mut super::message::Message> {
-        for tree in &mut self.trees {
-            for branch in tree.branches_mut() {
+        for tree in self.trees.iter_mut() {
+            for branch in tree.branches_mut().iter_mut() {
                 if let Some(message) = branch.get_message_by_id_mut(message_id) {
                     return Some(message);
                 }

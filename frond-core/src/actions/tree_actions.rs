@@ -39,8 +39,12 @@ impl Dialogue {
             .ok_or(DialogueError::TreeNotFound(tree_id))?;
 
         // Find the branch with the given name and remove it
-        if let Some(branch) = tree.branches().iter().find(|b| b.name() == branch_name) {
-            let branch_id = branch.id();
+        let branch_id = tree
+            .branches()
+            .iter()
+            .find(|b| b.name() == branch_name)
+            .map(|b| b.id());
+        if let Some(branch_id) = branch_id {
             tree.remove_branch_by_id(branch_id);
         }
 

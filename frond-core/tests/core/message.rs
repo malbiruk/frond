@@ -38,12 +38,8 @@ fn hides_and_shows_message() {
         })
         .unwrap();
 
-    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
-    let branch = tree
-        .branches()
-        .iter()
-        .find(|b| b.id() == branch_id)
-        .unwrap();
+    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
+    let branch = tree.get_branch_by_id(branch_id).unwrap();
     let message_id = branch.messages()[0].id();
 
     assert!(!branch.messages()[0].is_hidden());
@@ -51,23 +47,15 @@ fn hides_and_shows_message() {
     dialogue
         .apply_action(Action::HideMessage { message_id })
         .unwrap();
-    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
-    let branch = tree
-        .branches()
-        .iter()
-        .find(|b| b.id() == branch_id)
-        .unwrap();
+    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
+    let branch = tree.get_branch_by_id(branch_id).unwrap();
     assert!(branch.messages()[0].is_hidden());
 
     dialogue
         .apply_action(Action::ShowMessage { message_id })
         .unwrap();
-    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
-    let branch = tree
-        .branches()
-        .iter()
-        .find(|b| b.id() == branch_id)
-        .unwrap();
+    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
+    let branch = tree.get_branch_by_id(branch_id).unwrap();
     assert!(!branch.messages()[0].is_hidden());
 }
 
@@ -101,12 +89,8 @@ fn edits_message_content() {
         })
         .unwrap();
 
-    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
-    let branch = tree
-        .branches()
-        .iter()
-        .find(|b| b.id() == branch_id)
-        .unwrap();
+    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
+    let branch = tree.get_branch_by_id(branch_id).unwrap();
     let message_id = branch.messages()[0].id();
 
     dialogue
@@ -117,12 +101,8 @@ fn edits_message_content() {
         })
         .unwrap();
 
-    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
-    let branch = tree
-        .branches()
-        .iter()
-        .find(|b| b.id() == branch_id)
-        .unwrap();
+    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
+    let branch = tree.get_branch_by_id(branch_id).unwrap();
     assert_eq!(branch.messages()[0].content(), "New");
 }
 
@@ -156,24 +136,16 @@ fn switches_role() {
         })
         .unwrap();
 
-    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
-    let branch = tree
-        .branches()
-        .iter()
-        .find(|b| b.id() == branch_id)
-        .unwrap();
+    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
+    let branch = tree.get_branch_by_id(branch_id).unwrap();
     let message_id = branch.messages()[0].id();
 
     dialogue
         .apply_action(Action::ToggleMessageRole { message_id })
         .unwrap();
 
-    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
-    let branch = tree
-        .branches()
-        .iter()
-        .find(|b| b.id() == branch_id)
-        .unwrap();
+    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
+    let branch = tree.get_branch_by_id(branch_id).unwrap();
     assert_eq!(*branch.messages()[0].role(), Role::Assistant);
 }
 

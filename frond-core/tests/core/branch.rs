@@ -38,12 +38,8 @@ fn adds_and_removes_message() {
         })
         .unwrap();
 
-    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
-    let branch = tree
-        .branches()
-        .iter()
-        .find(|b| b.id() == branch_id)
-        .unwrap();
+    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
+    let branch = tree.get_branch_by_id(branch_id).unwrap();
     assert_eq!(branch.messages().len(), 1);
     let message_id = branch.messages()[0].id();
 
@@ -56,12 +52,8 @@ fn adds_and_removes_message() {
         })
         .unwrap();
 
-    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
-    let branch = tree
-        .branches()
-        .iter()
-        .find(|b| b.id() == branch_id)
-        .unwrap();
+    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
+    let branch = tree.get_branch_by_id(branch_id).unwrap();
     assert!(branch.messages().is_empty());
 }
 
@@ -101,12 +93,8 @@ fn adds_multiple_messages() {
         })
         .unwrap();
 
-    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
-    let branch = tree
-        .branches()
-        .iter()
-        .find(|b| b.id() == branch_id)
-        .unwrap();
+    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
+    let branch = tree.get_branch_by_id(branch_id).unwrap();
     assert_eq!(branch.messages().len(), 2);
 }
 
@@ -147,12 +135,8 @@ fn clears_messages() {
         })
         .unwrap();
 
-    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
-    let branch = tree
-        .branches()
-        .iter()
-        .find(|b| b.id() == branch_id)
-        .unwrap();
+    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
+    let branch = tree.get_branch_by_id(branch_id).unwrap();
     assert!(branch.messages().is_empty());
 }
 
@@ -187,12 +171,8 @@ fn renames_branch() {
         })
         .unwrap();
 
-    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
-    let branch = tree
-        .branches()
-        .iter()
-        .find(|b| b.id() == branch_id)
-        .unwrap();
+    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
+    let branch = tree.get_branch_by_id(branch_id).unwrap();
     assert_eq!(branch.name(), "renamed");
 }
 
@@ -227,12 +207,8 @@ fn sets_and_clears_branch_description() {
         })
         .unwrap();
 
-    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
-    let branch = tree
-        .branches()
-        .iter()
-        .find(|b| b.id() == branch_id)
-        .unwrap();
+    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
+    let branch = tree.get_branch_by_id(branch_id).unwrap();
     assert_eq!(branch.description(), Some("desc"));
 
     dialogue
@@ -242,12 +218,8 @@ fn sets_and_clears_branch_description() {
         })
         .unwrap();
 
-    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
-    let branch = tree
-        .branches()
-        .iter()
-        .find(|b| b.id() == branch_id)
-        .unwrap();
+    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
+    let branch = tree.get_branch_by_id(branch_id).unwrap();
     assert_eq!(branch.description(), None);
 }
 
@@ -281,19 +253,15 @@ fn gets_message_by_id() {
         })
         .unwrap();
 
-    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
-    let branch = tree
-        .branches()
-        .iter()
-        .find(|b| b.id() == branch_id)
-        .unwrap();
+    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
+    let branch = tree.get_branch_by_id(branch_id).unwrap();
     let message_id = branch.messages()[0].id();
 
-    let found = branch.messages().iter().find(|m| m.id() == message_id);
+    let found = branch.get_message_by_id(message_id);
     assert!(found.is_some());
     assert_eq!(found.unwrap().content(), "test");
 
-    let not_found = branch.messages().iter().find(|m| m.id() == Uuid::new_v4());
+    let not_found = branch.get_message_by_id(Uuid::new_v4());
     assert!(not_found.is_none());
 }
 
@@ -327,18 +295,14 @@ fn gets_message_by_id_mut() {
         })
         .unwrap();
 
-    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
-    let branch = tree
-        .branches()
-        .iter()
-        .find(|b| b.id() == branch_id)
-        .unwrap();
+    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
+    let branch = tree.get_branch_by_id(branch_id).unwrap();
     let message_id = branch.messages()[0].id();
 
-    let found = branch.messages().iter().find(|m| m.id() == message_id);
+    let found = branch.get_message_by_id(message_id);
     assert!(found.is_some());
 
-    let not_found = branch.messages().iter().find(|m| m.id() == Uuid::new_v4());
+    let not_found = branch.get_message_by_id(Uuid::new_v4());
     assert!(not_found.is_none());
 }
 
@@ -372,21 +336,14 @@ fn gets_message_index_by_id() {
         })
         .unwrap();
 
-    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
-    let branch = tree
-        .branches()
-        .iter()
-        .find(|b| b.id() == branch_id)
-        .unwrap();
+    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
+    let branch = tree.get_branch_by_id(branch_id).unwrap();
     let message_id = branch.messages()[0].id();
 
-    let idx = branch.messages().iter().position(|m| m.id() == message_id);
+    let idx = branch.get_message_index_by_id(message_id);
     assert_eq!(idx, Some(0));
 
-    let not_found = branch
-        .messages()
-        .iter()
-        .position(|m| m.id() == Uuid::new_v4());
+    let not_found = branch.get_message_index_by_id(Uuid::new_v4());
     assert!(not_found.is_none());
 }
 
@@ -426,12 +383,8 @@ fn fork_from_valid_message() {
         })
         .unwrap();
 
-    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
-    let branch = tree
-        .branches()
-        .iter()
-        .find(|b| b.id() == branch_id)
-        .unwrap();
+    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
+    let branch = tree.get_branch_by_id(branch_id).unwrap();
     let fork_point_id = branch.messages()[1].id();
 
     dialogue
@@ -443,7 +396,7 @@ fn fork_from_valid_message() {
         })
         .unwrap();
 
-    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
+    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
     let fork = tree.branches().iter().find(|b| b.name() == "alt").unwrap();
     assert_eq!(fork.messages().len(), 2);
     assert_eq!(fork.messages()[0].content(), "First");

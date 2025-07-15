@@ -30,7 +30,7 @@ impl Dialogue {
         // Remove the last message (which should be the one we just added)
         if !branch.messages().is_empty() {
             // Remove the last message by getting its ID and using the generated method
-            if let Some(last_message) = branch.messages().last() {
+            if let Some(last_message) = branch.messages().get(branch.messages().len() - 1) {
                 let last_id = last_message.id();
                 branch.remove_message_by_id(last_id);
             }

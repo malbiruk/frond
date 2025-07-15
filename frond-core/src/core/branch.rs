@@ -2,6 +2,8 @@ use super::error::BranchError;
 use super::message::Message;
 use uuid::Uuid;
 
+define_collection_wrapper!(Messages, Message);
+
 define_core_entity! {
     pub struct Branch<Message> {
         message, messages
@@ -17,7 +19,7 @@ impl Branch {
         let idx = self
             .get_message_index_by_id(message_id)
             .ok_or(BranchError::MessageNotFound(message_id))?;
-        let messages = self.messages[..=idx].to_vec();
+        let messages = self.messages.as_slice()[..=idx].to_vec();
         Ok(Branch::from_messages(new_name, messages))
     }
 
