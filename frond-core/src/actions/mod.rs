@@ -1,8 +1,8 @@
 pub mod action;
 pub mod branch_action;
 pub mod dialogue_action;
-pub mod dispatcher;
 pub mod message_action;
+pub mod reducer;
 pub mod tree_action;
 
 pub use action::Action;

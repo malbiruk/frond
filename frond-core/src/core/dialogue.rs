@@ -137,7 +137,7 @@ impl Dialogue {
 impl Dialogue {
     pub fn apply_action(&mut self, action: Action) -> Result<(), DialogueError> {
         self.action_stack.truncate(self.action_pos);
-        self.dispatch_action_apply(&action)?;
+        self.reduce_action_apply(&action)?;
         self.action_stack.push(action);
         self.action_pos += 1;
         Ok(())
@@ -147,7 +147,7 @@ impl Dialogue {
         if self.action_pos > 0 {
             self.action_pos -= 1;
             let action = self.action_stack[self.action_pos].clone();
-            self.dispatch_action_undo(&action)?;
+            self.reduce_action_undo(&action)?;
         }
         Ok(())
     }
@@ -155,7 +155,7 @@ impl Dialogue {
     pub fn redo_action(&mut self) -> Result<(), DialogueError> {
         if self.action_pos < self.action_stack.len() {
             let action = self.action_stack[self.action_pos].clone();
-            self.dispatch_action_apply(&action)?;
+            self.reduce_action_apply(&action)?;
             self.action_pos += 1;
         }
         Ok(())
