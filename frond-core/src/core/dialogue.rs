@@ -1,5 +1,5 @@
-use super::action::Action;
 use super::tree::Tree;
+use crate::actions::Action;
 use crate::core::error::DialogueError;
 
 define_core_entity! {
@@ -43,7 +43,7 @@ impl Dialogue {
         None
     }
 
-    pub fn get_branch_by_id_mut(
+    pub(crate) fn get_branch_by_id_mut(
         &mut self,
         branch_id: uuid::Uuid,
     ) -> Option<&mut super::branch::Branch> {
@@ -67,7 +67,7 @@ impl Dialogue {
         None
     }
 
-    pub fn get_message_by_id_mut(
+    pub(crate) fn get_message_by_id_mut(
         &mut self,
         message_id: uuid::Uuid,
     ) -> Option<&mut super::message::Message> {
@@ -88,11 +88,11 @@ impl Dialogue {
         self.is_archived
     }
 
-    pub fn archive(&mut self) {
+    pub(crate) fn archive(&mut self) {
         self.is_archived = true;
     }
 
-    pub fn unarchive(&mut self) {
+    pub(crate) fn unarchive(&mut self) {
         self.is_archived = false;
     }
 }
@@ -103,11 +103,11 @@ impl Dialogue {
         self.is_trashed
     }
 
-    pub fn trash(&mut self) {
+    pub(crate) fn trash(&mut self) {
         self.is_trashed = true;
     }
 
-    pub fn restore(&mut self) {
+    pub(crate) fn restore(&mut self) {
         self.is_trashed = false;
     }
 }
@@ -118,15 +118,15 @@ impl Dialogue {
         &self.tags
     }
 
-    pub fn add_tag(&mut self, tag: String) {
+    pub(crate) fn add_tag(&mut self, tag: String) {
         self.tags.push(tag);
     }
 
-    pub fn remove_tag(&mut self, tag: &str) {
+    pub(crate) fn remove_tag(&mut self, tag: &str) {
         self.tags.retain(|t| t != tag);
     }
 
-    pub fn clear_tags(&mut self) {
+    pub(crate) fn clear_tags(&mut self) {
         self.tags.clear();
     }
 }
@@ -157,114 +157,5 @@ impl Dialogue {
             self.action_pos += 1;
         }
         Ok(())
-    }
-
-    fn dispatch_action_apply(&mut self, action: &Action) -> Result<(), DialogueError> {
-        match action {
-            // Dialogue actions
-            Action::RenameDialogue { new_name, .. } => {
-                self.rename(new_name);
-                Ok(())
-            }
-
-            // Tree actions
-            Action::RenameTree {
-                tree_id,
-                old_name: _,
-                new_name,
-            } => self.rename_tree(*tree_id, new_name.to_string()),
-
-            Action::ForkBranch {
-                tree_id,
-                branch_id,
-                from_message_id,
-                new_branch_name,
-            } => self.fork_branch(
-                *tree_id,
-                *branch_id,
-                *from_message_id,
-                new_branch_name.to_string(),
-            ),
-
-            // Branch actions
-            Action::AppendMessage {
-                branch_id,
-                message_content,
-            } => self.append_message(*branch_id, message_content.clone()),
-
-            Action::RenameBranch {
-                branch_id,
-                old_name: _,
-                new_name,
-            } => self.rename_branch(*branch_id, new_name.clone()),
-
-            // Message actions
-            Action::EditMessage {
-                message_id,
-                old_content: _,
-                new_content,
-            } => self.edit_message(*message_id, new_content.clone()),
-
-            Action::DeleteMessage {
-                message_id,
-                branch_id,
-                message_index,
-                deleted_message: _,
-            } => self.delete_message(*message_id, *branch_id, *message_index),
-
-            Action::ToggleMessageRole { message_id } => self.toggle_message_role(*message_id),
-        }
-    }
-
-    fn dispatch_action_undo(&mut self, action: &Action) -> Result<(), DialogueError> {
-        match action {
-            // Dialogue actions
-            Action::RenameDialogue { old_name, .. } => {
-                self.rename(old_name);
-                Ok(())
-            }
-
-            // Tree actions
-            Action::RenameTree {
-                tree_id,
-                old_name,
-                new_name: _,
-            } => self.rename_tree(*tree_id, old_name.to_string()),
-
-            Action::ForkBranch {
-                tree_id,
-                branch_id: _,
-                from_message_id: _,
-                new_branch_name,
-            } => self.undo_fork_branch(*tree_id, new_branch_name.to_string()),
-
-            // Branch actions
-            Action::AppendMessage {
-                branch_id,
-                message_content: _,
-            } => self.undo_append_message(*branch_id),
-
-            Action::RenameBranch {
-                branch_id,
-                old_name,
-                new_name: _,
-            } => self.rename_branch(*branch_id, old_name.clone()),
-
-            // Message actions
-            Action::EditMessage {
-                message_id,
-                old_content,
-                new_content: _,
-            } => self.edit_message(*message_id, old_content.clone()),
-
-            Action::DeleteMessage {
-                message_id: _,
-                branch_id,
-                message_index,
-                deleted_message,
-            } => self.undo_delete_message(*branch_id, *message_index, deleted_message.clone()),
-
-            Action::ToggleMessageRole { message_id } => self.toggle_message_role(*message_id),
-        }
     }
 }

@@ -1,5 +1,5 @@
 use frond_core::core::error::{BranchError, DialogueError, TreeError};
-use frond_core::{Action, Branch, Dialogue, Message, Role, Tree};
+use frond_core::{Action, Dialogue, Role, Tree};
 use uuid::Uuid;
 
 #[test]
@@ -13,20 +13,34 @@ fn dispatch_action_apply_with_nonexistent_message() {
         new_content: "new".to_string(),
     };
 
-    // Should error for nonexistent message
     assert!(dialogue.apply_action(action).is_err());
 }
 
 #[test]
 fn dispatch_action_undo_with_nonexistent_message() {
     let tree = Tree::new("main");
+    let tree_id = tree.id();
     let mut dialogue = Dialogue::from_tree(tree);
 
-    let mut branch = Branch::new("test_branch");
-    let message = Message::new("Hello", Role::User);
-    let message_id = message.id();
-    branch.add_message(message);
-    dialogue.trees_mut()[0].add_branch(branch);
+    dialogue
+        .apply_action(Action::AddBranch {
+            tree_id,
+            branch_id: uuid::Uuid::new_v4(),
+            branch_name: "test_branch".to_string(),
+        })
+        .unwrap();
+
+    let branch_id = dialogue.trees()[0].branches()[0].id();
+
+    dialogue
+        .apply_action(Action::AppendMessage {
+            branch_id,
+            message_content: "Hello".to_string(),
+        })
+        .unwrap();
+
+    let branch = dialogue.get_branch_by_id(branch_id).unwrap();
+    let message_id = branch.messages()[0].id();
 
     let action = Action::EditMessage {
         message_id,
@@ -35,7 +49,6 @@ fn dispatch_action_undo_with_nonexistent_message() {
     };
 
     dialogue.apply_action(action).unwrap();
-    // Should succeed for valid message
     dialogue.undo_action().unwrap();
 }
 
@@ -46,14 +59,12 @@ fn branch_actions_with_nonexistent_branch() {
 
     let nonexistent_branch_id = Uuid::new_v4();
 
-    // Test AppendMessage with nonexistent branch
     let append_action = Action::AppendMessage {
         branch_id: nonexistent_branch_id,
         message_content: "Hello".to_string(),
     };
     assert!(dialogue.apply_action(append_action).is_err());
 
-    // Test RenameBranch with nonexistent branch
     let rename_action = Action::RenameBranch {
         branch_id: nonexistent_branch_id,
         old_name: "old".to_string(),
@@ -68,9 +79,8 @@ fn message_actions_with_nonexistent_message() {
     let mut dialogue = Dialogue::from_tree(tree);
 
     let nonexistent_message_id = Uuid::new_v4();
-    let fake_message = Message::new("fake", Role::User);
+    let fake_message = frond_core::Message::new("fake", Role::User);
 
-    // Test EditMessage with nonexistent message
     let edit_action = Action::EditMessage {
         message_id: nonexistent_message_id,
         old_content: "old".to_string(),
@@ -78,16 +88,14 @@ fn message_actions_with_nonexistent_message() {
     };
     assert!(dialogue.apply_action(edit_action).is_err());
 
-    // Test DeleteMessage with nonexistent message
     let delete_action = Action::DeleteMessage {
         message_id: nonexistent_message_id,
-        branch_id: Uuid::new_v4(), // Nonexistent branch
-        message_index: 0,          // Invalid index
+        branch_id: Uuid::new_v4(),
+        message_index: 0,
         deleted_message: fake_message.clone(),
     };
     assert!(dialogue.apply_action(delete_action).is_err());
 
-    // Test ToggleMessageRole with nonexistent message
     let toggle_action = Action::ToggleMessageRole {
         message_id: nonexistent_message_id,
     };
@@ -101,7 +109,6 @@ fn tree_actions_with_nonexistent_tree() {
 
     let nonexistent_tree_id = Uuid::new_v4();
 
-    // Test RenameTree with nonexistent tree
     let rename_action = Action::RenameTree {
         tree_id: nonexistent_tree_id,
         old_name: "old".to_string(),
@@ -109,7 +116,6 @@ fn tree_actions_with_nonexistent_tree() {
     };
     assert!(dialogue.apply_action(rename_action).is_err());
 
-    // Test ForkBranch with nonexistent tree
     let fork_action = Action::ForkBranch {
         tree_id: nonexistent_tree_id,
         branch_id: Uuid::new_v4(),
@@ -134,8 +140,6 @@ fn error_hierarchy_demonstration() {
     let result = dialogue.apply_action(action);
     assert!(result.is_err());
 
-    // Verify the error follows the proper hierarchy:
-    // DialogueError -> TreeError -> BranchError -> MessageNotFound
     let error = result.unwrap_err();
     match error {
         DialogueError::Tree(TreeError::Branch(BranchError::MessageNotFound(id))) => {
@@ -150,15 +154,30 @@ fn error_hierarchy_demonstration() {
 #[test]
 fn delete_message_with_invalid_location() {
     let tree = Tree::new("main");
+    let tree_id = tree.id();
     let mut dialogue = Dialogue::from_tree(tree);
 
-    let mut branch = Branch::new("test_branch");
-    let message = Message::new("Hello world", Role::User);
-    let message_id = message.id();
-    branch.add_message(message.clone());
-    dialogue.trees_mut()[0].add_branch(branch);
+    dialogue
+        .apply_action(Action::AddBranch {
+            tree_id,
+            branch_id: uuid::Uuid::new_v4(),
+            branch_name: "test_branch".to_string(),
+        })
+        .unwrap();
 
-    // Try to delete with wrong branch_id
+    let branch_id = dialogue.trees()[0].branches()[0].id();
+
+    dialogue
+        .apply_action(Action::AppendMessage {
+            branch_id,
+            message_content: "Hello world".to_string(),
+        })
+        .unwrap();
+
+    let branch = dialogue.get_branch_by_id(branch_id).unwrap();
+    let message = branch.messages()[0].clone();
+    let message_id = message.id();
+
     let wrong_branch_id = Uuid::new_v4();
     let action = Action::DeleteMessage {
         message_id,
@@ -180,20 +199,34 @@ fn delete_message_with_invalid_location() {
 #[test]
 fn delete_message_with_invalid_index() {
     let tree = Tree::new("main");
+    let tree_id = tree.id();
     let mut dialogue = Dialogue::from_tree(tree);
 
-    let mut branch = Branch::new("test_branch");
-    let message = Message::new("Hello world", Role::User);
-    let message_id = message.id();
-    branch.add_message(message.clone());
-    let branch_id = branch.id();
-    dialogue.trees_mut()[0].add_branch(branch);
+    dialogue
+        .apply_action(Action::AddBranch {
+            tree_id,
+            branch_id: uuid::Uuid::new_v4(),
+            branch_name: "test_branch".to_string(),
+        })
+        .unwrap();
 
-    // Try to delete with wrong message_index
+    let branch_id = dialogue.trees()[0].branches()[0].id();
+
+    dialogue
+        .apply_action(Action::AppendMessage {
+            branch_id,
+            message_content: "Hello world".to_string(),
+        })
+        .unwrap();
+
+    let branch = dialogue.get_branch_by_id(branch_id).unwrap();
+    let message = branch.messages()[0].clone();
+    let message_id = message.id();
+
     let action = Action::DeleteMessage {
         message_id,
         branch_id,
-        message_index: 999, // Invalid index
+        message_index: 999,
         deleted_message: message,
     };
 
@@ -213,13 +246,23 @@ fn fork_branch_with_invalid_message() {
     let tree_id = tree.id();
     let mut dialogue = Dialogue::from_tree(tree);
 
-    let mut branch = Branch::new("test_branch");
-    let message = Message::new("Hello world", Role::User);
-    branch.add_message(message);
-    let branch_id = branch.id();
-    dialogue.trees_mut()[0].add_branch(branch);
+    dialogue
+        .apply_action(Action::AddBranch {
+            tree_id,
+            branch_id: uuid::Uuid::new_v4(),
+            branch_name: "test_branch".to_string(),
+        })
+        .unwrap();
 
-    // Try to fork from nonexistent message
+    let branch_id = dialogue.trees()[0].branches()[0].id();
+
+    dialogue
+        .apply_action(Action::AppendMessage {
+            branch_id,
+            message_content: "Hello world".to_string(),
+        })
+        .unwrap();
+
     let nonexistent_message_id = Uuid::new_v4();
     let action = Action::ForkBranch {
         tree_id,

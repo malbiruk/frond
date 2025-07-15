@@ -55,7 +55,7 @@ macro_rules! define_core_entity {
                     &self.$child_plural
                 }
 
-                pub fn [<$child_plural _mut>](&mut self) -> &mut [$child] {
+                pub(crate) fn [<$child_plural _mut>](&mut self) -> &mut [$child] {
                     &mut self.$child_plural
                 }
 
@@ -63,7 +63,7 @@ macro_rules! define_core_entity {
                     self.$child_plural.iter().find(|c| c.id() == child_id)
                 }
 
-                pub fn [<get_ $child_singular _by_id_mut>](&mut self, child_id: uuid::Uuid) -> Option<&mut $child> {
+                pub(crate) fn [<get_ $child_singular _by_id_mut>](&mut self, child_id: uuid::Uuid) -> Option<&mut $child> {
                     self.$child_plural.iter_mut().find(|c| c.id() == child_id)
                 }
 
@@ -71,15 +71,15 @@ macro_rules! define_core_entity {
                     self.$child_plural.iter().position(|c| c.id() == child_id)
                 }
 
-                pub fn [<add_ $child_singular>](&mut self, child: $child) {
+                pub(crate) fn [<add_ $child_singular>](&mut self, child: $child) {
                     self.$child_plural.push(child);
                 }
 
-                pub fn [<add_ $child_plural>](&mut self, children: Vec<$child>) {
+                pub(crate) fn [<add_ $child_plural>](&mut self, children: Vec<$child>) {
                     self.$child_plural.extend(children);
                 }
 
-                pub fn [<remove_ $child_singular _by_id>](&mut self, child_id: uuid::Uuid) -> Option<$child> {
+                pub(crate) fn [<remove_ $child_singular _by_id>](&mut self, child_id: uuid::Uuid) -> Option<$child> {
                     if let Some(pos) = self.$child_plural.iter().position(|c| c.id() == child_id) {
                         Some(self.$child_plural.remove(pos))
                     } else {
@@ -87,19 +87,19 @@ macro_rules! define_core_entity {
                     }
                 }
 
-                pub fn clear(&mut self) {
+                pub(crate) fn clear(&mut self) {
                     self.$child_plural.clear();
                 }
 
-                pub fn rename(&mut self, name: impl Into<String>) {
+                pub(crate) fn rename(&mut self, name: impl Into<String>) {
                     self.name = name.into();
                 }
 
-                pub fn set_description(&mut self, description: impl Into<String>) {
+                pub(crate) fn set_description(&mut self, description: impl Into<String>) {
                     self.description = Some(description.into());
                 }
 
-                pub fn clear_description(&mut self) {
+                pub(crate) fn clear_description(&mut self) {
                     self.description = None;
                 }
             }

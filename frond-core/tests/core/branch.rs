@@ -1,25 +1,450 @@
-use frond_core::{Branch, Message, Role};
+use frond_core::{Action, Branch, Dialogue};
 use uuid::Uuid;
 
-crate::test_core_entity!(
-    Branch,
-    message,
-    messages,
-    Message,
-    Message::new("test", Role::User)
-);
+#[test]
+fn creates_branch_with_name() {
+    let branch = Branch::new("main");
+    assert_eq!(branch.name(), "main");
+    assert!(branch.messages().is_empty());
+}
+
+#[test]
+fn adds_and_removes_message() {
+    let mut dialogue = Dialogue::new("Test");
+
+    dialogue
+        .apply_action(Action::AddTree {
+            tree_id: uuid::Uuid::new_v4(),
+            tree_name: "tree".to_string(),
+        })
+        .unwrap();
+
+    let tree_id = dialogue.trees()[0].id();
+
+    dialogue
+        .apply_action(Action::AddBranch {
+            tree_id,
+            branch_id: uuid::Uuid::new_v4(),
+            branch_name: "branch".to_string(),
+        })
+        .unwrap();
+
+    let branch_id = dialogue.trees()[0].branches()[0].id();
+
+    dialogue
+        .apply_action(Action::AppendMessage {
+            branch_id,
+            message_content: "test".to_string(),
+        })
+        .unwrap();
+
+    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
+    let branch = tree
+        .branches()
+        .iter()
+        .find(|b| b.id() == branch_id)
+        .unwrap();
+    assert_eq!(branch.messages().len(), 1);
+    let message_id = branch.messages()[0].id();
+
+    dialogue
+        .apply_action(Action::RemoveMessageById {
+            branch_id,
+            message_id,
+            message_index: 0,
+            removed_message: branch.messages()[0].clone(),
+        })
+        .unwrap();
+
+    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
+    let branch = tree
+        .branches()
+        .iter()
+        .find(|b| b.id() == branch_id)
+        .unwrap();
+    assert!(branch.messages().is_empty());
+}
+
+#[test]
+fn adds_multiple_messages() {
+    let mut dialogue = Dialogue::new("Test");
+
+    dialogue
+        .apply_action(Action::AddTree {
+            tree_id: uuid::Uuid::new_v4(),
+            tree_name: "tree".to_string(),
+        })
+        .unwrap();
+
+    let tree_id = dialogue.trees()[0].id();
+
+    dialogue
+        .apply_action(Action::AddBranch {
+            tree_id,
+            branch_id: uuid::Uuid::new_v4(),
+            branch_name: "branch".to_string(),
+        })
+        .unwrap();
+
+    let branch_id = dialogue.trees()[0].branches()[0].id();
+
+    dialogue
+        .apply_action(Action::AppendMessage {
+            branch_id,
+            message_content: "first".to_string(),
+        })
+        .unwrap();
+    dialogue
+        .apply_action(Action::AppendMessage {
+            branch_id,
+            message_content: "second".to_string(),
+        })
+        .unwrap();
+
+    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
+    let branch = tree
+        .branches()
+        .iter()
+        .find(|b| b.id() == branch_id)
+        .unwrap();
+    assert_eq!(branch.messages().len(), 2);
+}
+
+#[test]
+fn clears_messages() {
+    let mut dialogue = Dialogue::new("Test");
+
+    dialogue
+        .apply_action(Action::AddTree {
+            tree_id: uuid::Uuid::new_v4(),
+            tree_name: "tree".to_string(),
+        })
+        .unwrap();
+
+    let tree_id = dialogue.trees()[0].id();
+
+    dialogue
+        .apply_action(Action::AddBranch {
+            tree_id,
+            branch_id: uuid::Uuid::new_v4(),
+            branch_name: "branch".to_string(),
+        })
+        .unwrap();
+
+    let branch_id = dialogue.trees()[0].branches()[0].id();
+
+    dialogue
+        .apply_action(Action::AppendMessage {
+            branch_id,
+            message_content: "test".to_string(),
+        })
+        .unwrap();
+
+    dialogue
+        .apply_action(Action::ClearMessages {
+            branch_id,
+            removed_messages: vec![],
+        })
+        .unwrap();
+
+    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
+    let branch = tree
+        .branches()
+        .iter()
+        .find(|b| b.id() == branch_id)
+        .unwrap();
+    assert!(branch.messages().is_empty());
+}
+
+#[test]
+fn renames_branch() {
+    let mut dialogue = Dialogue::new("Test");
+
+    dialogue
+        .apply_action(Action::AddTree {
+            tree_id: uuid::Uuid::new_v4(),
+            tree_name: "tree".to_string(),
+        })
+        .unwrap();
+
+    let tree_id = dialogue.trees()[0].id();
+
+    dialogue
+        .apply_action(Action::AddBranch {
+            tree_id,
+            branch_id: uuid::Uuid::new_v4(),
+            branch_name: "branch".to_string(),
+        })
+        .unwrap();
+
+    let branch_id = dialogue.trees()[0].branches()[0].id();
+
+    dialogue
+        .apply_action(Action::RenameBranch {
+            branch_id,
+            old_name: "branch".to_string(),
+            new_name: "renamed".to_string(),
+        })
+        .unwrap();
+
+    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
+    let branch = tree
+        .branches()
+        .iter()
+        .find(|b| b.id() == branch_id)
+        .unwrap();
+    assert_eq!(branch.name(), "renamed");
+}
+
+#[test]
+fn sets_and_clears_branch_description() {
+    let mut dialogue = Dialogue::new("Test");
+
+    dialogue
+        .apply_action(Action::AddTree {
+            tree_id: uuid::Uuid::new_v4(),
+            tree_name: "tree".to_string(),
+        })
+        .unwrap();
+
+    let tree_id = dialogue.trees()[0].id();
+
+    dialogue
+        .apply_action(Action::AddBranch {
+            tree_id,
+            branch_id: uuid::Uuid::new_v4(),
+            branch_name: "branch".to_string(),
+        })
+        .unwrap();
+
+    let branch_id = dialogue.trees()[0].branches()[0].id();
+
+    dialogue
+        .apply_action(Action::SetBranchDescription {
+            branch_id,
+            old_description: None,
+            new_description: "desc".to_string(),
+        })
+        .unwrap();
+
+    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
+    let branch = tree
+        .branches()
+        .iter()
+        .find(|b| b.id() == branch_id)
+        .unwrap();
+    assert_eq!(branch.description(), Some("desc"));
+
+    dialogue
+        .apply_action(Action::ClearBranchDescription {
+            branch_id,
+            old_description: "desc".to_string(),
+        })
+        .unwrap();
+
+    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
+    let branch = tree
+        .branches()
+        .iter()
+        .find(|b| b.id() == branch_id)
+        .unwrap();
+    assert_eq!(branch.description(), None);
+}
+
+#[test]
+fn gets_message_by_id() {
+    let mut dialogue = Dialogue::new("Test");
+
+    dialogue
+        .apply_action(Action::AddTree {
+            tree_id: uuid::Uuid::new_v4(),
+            tree_name: "tree".to_string(),
+        })
+        .unwrap();
+
+    let tree_id = dialogue.trees()[0].id();
+
+    dialogue
+        .apply_action(Action::AddBranch {
+            tree_id,
+            branch_id: uuid::Uuid::new_v4(),
+            branch_name: "branch".to_string(),
+        })
+        .unwrap();
+
+    let branch_id = dialogue.trees()[0].branches()[0].id();
+
+    dialogue
+        .apply_action(Action::AppendMessage {
+            branch_id,
+            message_content: "test".to_string(),
+        })
+        .unwrap();
+
+    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
+    let branch = tree
+        .branches()
+        .iter()
+        .find(|b| b.id() == branch_id)
+        .unwrap();
+    let message_id = branch.messages()[0].id();
+
+    let found = branch.messages().iter().find(|m| m.id() == message_id);
+    assert!(found.is_some());
+    assert_eq!(found.unwrap().content(), "test");
+
+    let not_found = branch.messages().iter().find(|m| m.id() == Uuid::new_v4());
+    assert!(not_found.is_none());
+}
+
+#[test]
+fn gets_message_by_id_mut() {
+    let mut dialogue = Dialogue::new("Test");
+
+    dialogue
+        .apply_action(Action::AddTree {
+            tree_id: uuid::Uuid::new_v4(),
+            tree_name: "tree".to_string(),
+        })
+        .unwrap();
+
+    let tree_id = dialogue.trees()[0].id();
+
+    dialogue
+        .apply_action(Action::AddBranch {
+            tree_id,
+            branch_id: uuid::Uuid::new_v4(),
+            branch_name: "branch".to_string(),
+        })
+        .unwrap();
+
+    let branch_id = dialogue.trees()[0].branches()[0].id();
+
+    dialogue
+        .apply_action(Action::AppendMessage {
+            branch_id,
+            message_content: "test".to_string(),
+        })
+        .unwrap();
+
+    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
+    let branch = tree
+        .branches()
+        .iter()
+        .find(|b| b.id() == branch_id)
+        .unwrap();
+    let message_id = branch.messages()[0].id();
+
+    let found = branch.messages().iter().find(|m| m.id() == message_id);
+    assert!(found.is_some());
+
+    let not_found = branch.messages().iter().find(|m| m.id() == Uuid::new_v4());
+    assert!(not_found.is_none());
+}
+
+#[test]
+fn gets_message_index_by_id() {
+    let mut dialogue = Dialogue::new("Test");
+
+    dialogue
+        .apply_action(Action::AddTree {
+            tree_id: uuid::Uuid::new_v4(),
+            tree_name: "tree".to_string(),
+        })
+        .unwrap();
+
+    let tree_id = dialogue.trees()[0].id();
+
+    dialogue
+        .apply_action(Action::AddBranch {
+            tree_id,
+            branch_id: uuid::Uuid::new_v4(),
+            branch_name: "branch".to_string(),
+        })
+        .unwrap();
+
+    let branch_id = dialogue.trees()[0].branches()[0].id();
+
+    dialogue
+        .apply_action(Action::AppendMessage {
+            branch_id,
+            message_content: "test".to_string(),
+        })
+        .unwrap();
+
+    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
+    let branch = tree
+        .branches()
+        .iter()
+        .find(|b| b.id() == branch_id)
+        .unwrap();
+    let message_id = branch.messages()[0].id();
+
+    let idx = branch.messages().iter().position(|m| m.id() == message_id);
+    assert_eq!(idx, Some(0));
+
+    let not_found = branch
+        .messages()
+        .iter()
+        .position(|m| m.id() == Uuid::new_v4());
+    assert!(not_found.is_none());
+}
 
 #[test]
 fn fork_from_valid_message() {
-    let mut branch = Branch::new("main");
-    let msg1 = Message::new("First", Role::User);
-    let msg2 = Message::new("Second", Role::Assistant);
-    branch.add_message(msg1.clone());
-    branch.add_message(msg2.clone());
+    let mut dialogue = Dialogue::new("Test");
 
-    let fork = branch
-        .fork_from(msg2.id(), "alt")
-        .expect("Fork should succeed");
+    dialogue
+        .apply_action(Action::AddTree {
+            tree_id: uuid::Uuid::new_v4(),
+            tree_name: "tree".to_string(),
+        })
+        .unwrap();
+
+    let tree_id = dialogue.trees()[0].id();
+
+    dialogue
+        .apply_action(Action::AddBranch {
+            tree_id,
+            branch_id: uuid::Uuid::new_v4(),
+            branch_name: "main".to_string(),
+        })
+        .unwrap();
+
+    let branch_id = dialogue.trees()[0].branches()[0].id();
+
+    dialogue
+        .apply_action(Action::AppendMessage {
+            branch_id,
+            message_content: "First".to_string(),
+        })
+        .unwrap();
+    dialogue
+        .apply_action(Action::AppendMessage {
+            branch_id,
+            message_content: "Second".to_string(),
+        })
+        .unwrap();
+
+    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
+    let branch = tree
+        .branches()
+        .iter()
+        .find(|b| b.id() == branch_id)
+        .unwrap();
+    let fork_point_id = branch.messages()[1].id();
+
+    dialogue
+        .apply_action(Action::ForkBranch {
+            tree_id,
+            branch_id,
+            from_message_id: fork_point_id,
+            new_branch_name: "alt".to_string(),
+        })
+        .unwrap();
+
+    let tree = dialogue.trees().iter().find(|t| t.id() == tree_id).unwrap();
+    let fork = tree.branches().iter().find(|b| b.name() == "alt").unwrap();
     assert_eq!(fork.messages().len(), 2);
     assert_eq!(fork.messages()[0].content(), "First");
     assert_eq!(fork.messages()[1].content(), "Second");
@@ -28,8 +453,33 @@ fn fork_from_valid_message() {
 
 #[test]
 fn fork_from_invalid_message_returns_error() {
-    let branch = Branch::new("main");
+    let mut dialogue = Dialogue::new("Test");
+
+    dialogue
+        .apply_action(Action::AddTree {
+            tree_id: uuid::Uuid::new_v4(),
+            tree_name: "tree".to_string(),
+        })
+        .unwrap();
+
+    let tree_id = dialogue.trees()[0].id();
+
+    dialogue
+        .apply_action(Action::AddBranch {
+            tree_id,
+            branch_id: uuid::Uuid::new_v4(),
+            branch_name: "main".to_string(),
+        })
+        .unwrap();
+
+    let branch_id = dialogue.trees()[0].branches()[0].id();
+
     let invalid_id = Uuid::new_v4();
-    let result = branch.fork_from(invalid_id, "alt");
+    let result = dialogue.apply_action(Action::ForkBranch {
+        tree_id,
+        branch_id,
+        from_message_id: invalid_id,
+        new_branch_name: "alt".to_string(),
+    });
     assert!(result.is_err());
 }

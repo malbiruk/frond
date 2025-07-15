@@ -5,6 +5,3 @@ mod core {
     mod message;
     mod tree;
 }
-
-#[macro_use]
-mod macros;

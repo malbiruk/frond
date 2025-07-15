@@ -1,14 +1,21 @@
-use frond_core::{Branch, Dialogue, Message, Role, Tree};
+use frond_core::{Action, Dialogue, Tree};
 use uuid::Uuid;
 
 #[test]
 fn gets_branch_by_id() {
     let tree = Tree::new("main");
+    let tree_id = tree.id();
     let mut dialogue = Dialogue::from_tree(tree);
 
-    let branch = Branch::new("test_branch");
-    let branch_id = branch.id();
-    dialogue.trees_mut()[0].add_branch(branch);
+    dialogue
+        .apply_action(Action::AddBranch {
+            tree_id,
+            branch_id: uuid::Uuid::new_v4(),
+            branch_name: "test_branch".to_string(),
+        })
+        .unwrap();
+
+    let branch_id = dialogue.trees()[0].branches()[0].id();
 
     let found = dialogue.get_branch_by_id(branch_id);
     assert!(found.is_some());
@@ -25,43 +32,30 @@ fn get_branch_by_id_returns_none_for_nonexistent() {
 }
 
 #[test]
-fn gets_branch_by_id_mut() {
-    let tree = Tree::new("main");
-    let mut dialogue = Dialogue::from_tree(tree);
-
-    let branch = Branch::new("test_branch");
-    let branch_id = branch.id();
-    dialogue.trees_mut()[0].add_branch(branch);
-
-    let found = dialogue.get_branch_by_id_mut(branch_id);
-    assert!(found.is_some());
-    found.unwrap().rename("renamed_branch");
-
-    assert_eq!(
-        dialogue.get_branch_by_id(branch_id).unwrap().name(),
-        "renamed_branch"
-    );
-}
-
-#[test]
-fn get_branch_by_id_mut_returns_none_for_nonexistent() {
-    let tree = Tree::new("main");
-    let mut dialogue = Dialogue::from_tree(tree);
-
-    let not_found = dialogue.get_branch_by_id_mut(Uuid::new_v4());
-    assert!(not_found.is_none());
-}
-
-#[test]
 fn gets_message_by_id() {
     let tree = Tree::new("main");
+    let tree_id = tree.id();
     let mut dialogue = Dialogue::from_tree(tree);
 
-    let mut branch = Branch::new("test_branch");
-    let message = Message::new("Hello world", Role::User);
-    let message_id = message.id();
-    branch.add_message(message);
-    dialogue.trees_mut()[0].add_branch(branch);
+    dialogue
+        .apply_action(Action::AddBranch {
+            tree_id,
+            branch_id: uuid::Uuid::new_v4(),
+            branch_name: "test_branch".to_string(),
+        })
+        .unwrap();
+
+    let branch_id = dialogue.trees()[0].branches()[0].id();
+
+    dialogue
+        .apply_action(Action::AppendMessage {
+            branch_id,
+            message_content: "Hello world".to_string(),
+        })
+        .unwrap();
+
+    let branch = dialogue.get_branch_by_id(branch_id).unwrap();
+    let message_id = branch.messages()[0].id();
 
     let found = dialogue.get_message_by_id(message_id);
     assert!(found.is_some());
@@ -78,69 +72,57 @@ fn get_message_by_id_returns_none_for_nonexistent() {
 }
 
 #[test]
-fn gets_message_by_id_mut() {
-    let tree = Tree::new("main");
-    let mut dialogue = Dialogue::from_tree(tree);
-
-    let mut branch = Branch::new("test_branch");
-    let message = Message::new("Hello world", Role::User);
-    let message_id = message.id();
-    branch.add_message(message);
-    dialogue.trees_mut()[0].add_branch(branch);
-
-    let found = dialogue.get_message_by_id_mut(message_id);
-    assert!(found.is_some());
-    found.unwrap().edit_content("Updated content");
-
-    assert_eq!(
-        dialogue.get_message_by_id(message_id).unwrap().content(),
-        "Updated content"
-    );
-}
-
-#[test]
-fn get_message_by_id_mut_returns_none_for_nonexistent() {
-    let tree = Tree::new("main");
-    let mut dialogue = Dialogue::from_tree(tree);
-
-    let not_found = dialogue.get_message_by_id_mut(Uuid::new_v4());
-    assert!(not_found.is_none());
-}
-
-#[test]
 fn get_message_by_id_works_across_trees_and_branches() {
     let tree = Tree::new("main");
+    let tree_id = tree.id();
     let mut dialogue = Dialogue::from_tree(tree);
 
-    let mut branch = Branch::new("test_branch");
-    let msg1 = Message::new("First message", Role::User);
-    let msg2 = Message::new("Second message", Role::Assistant);
-    let msg3 = Message::new("Third message", Role::User);
+    dialogue
+        .apply_action(Action::AddBranch {
+            tree_id,
+            branch_id: uuid::Uuid::new_v4(),
+            branch_name: "test_branch".to_string(),
+        })
+        .unwrap();
 
-    let msg1_id = msg1.id();
-    let msg2_id = msg2.id();
-    let msg3_id = msg3.id();
+    let branch_id = dialogue.trees()[0].branches()[0].id();
 
-    branch.add_message(msg1.clone());
-    branch.add_message(msg2.clone());
-    branch.add_message(msg3.clone());
+    dialogue
+        .apply_action(Action::AppendMessage {
+            branch_id,
+            message_content: "First message".to_string(),
+        })
+        .unwrap();
+    dialogue
+        .apply_action(Action::AppendMessage {
+            branch_id,
+            message_content: "Second message".to_string(),
+        })
+        .unwrap();
+    dialogue
+        .apply_action(Action::AppendMessage {
+            branch_id,
+            message_content: "Third message".to_string(),
+        })
+        .unwrap();
 
-    dialogue.trees_mut()[0].add_branch(branch);
+    let branch = dialogue.get_branch_by_id(branch_id).unwrap();
+    let msg1_id = branch.messages()[0].id();
+    let msg2_id = branch.messages()[1].id();
+    let msg3_id = branch.messages()[2].id();
 
-    // Test finding messages by ID
     let found_msg1 = dialogue.get_message_by_id(msg1_id);
     assert!(found_msg1.is_some());
-    assert_eq!(found_msg1.unwrap().content(), msg1.content());
+    assert_eq!(found_msg1.unwrap().content(), "First message");
 
     let found_msg2 = dialogue.get_message_by_id(msg2_id);
     assert!(found_msg2.is_some());
-    assert_eq!(found_msg2.unwrap().content(), msg2.content());
+    assert_eq!(found_msg2.unwrap().content(), "Second message");
 
     let found_msg3 = dialogue.get_message_by_id(msg3_id);
     assert!(found_msg3.is_some());
-    assert_eq!(found_msg3.unwrap().content(), msg3.content());
+    assert_eq!(found_msg3.unwrap().content(), "Third message");
 
-    // Test with nonexistent message
     let nonexistent_id = Uuid::new_v4();
     let result = dialogue.get_message_by_id(nonexistent_id);
     assert!(result.is_none());
@@ -150,26 +132,48 @@ fn get_message_by_id_works_across_trees_and_branches() {
 fn helper_methods_work_across_multiple_trees() {
     let tree1 = Tree::new("tree1");
     let tree2 = Tree::new("tree2");
+    let tree1_id = tree1.id();
+    let tree2_id = tree2.id();
     let mut dialogue = Dialogue::from_trees("dialogue", vec![tree1, tree2]);
 
-    let mut branch1 = Branch::new("branch1");
-    let mut branch2 = Branch::new("branch2");
+    dialogue
+        .apply_action(Action::AddBranch {
+            tree_id: tree1_id,
+            branch_id: uuid::Uuid::new_v4(),
+            branch_name: "branch1".to_string(),
+        })
+        .unwrap();
 
-    let message1 = Message::new("Message in tree1", Role::User);
-    let message2 = Message::new("Message in tree2", Role::Assistant);
-    let message1_id = message1.id();
-    let message2_id = message2.id();
+    dialogue
+        .apply_action(Action::AddBranch {
+            tree_id: tree2_id,
+            branch_id: uuid::Uuid::new_v4(),
+            branch_name: "branch2".to_string(),
+        })
+        .unwrap();
 
-    let branch1_id = branch1.id();
-    let branch2_id = branch2.id();
+    let branch1_id = dialogue.get_tree_by_id(tree1_id).unwrap().branches()[0].id();
+    let branch2_id = dialogue.get_tree_by_id(tree2_id).unwrap().branches()[0].id();
 
-    branch1.add_message(message1);
-    branch2.add_message(message2);
+    dialogue
+        .apply_action(Action::AppendMessage {
+            branch_id: branch1_id,
+            message_content: "Message in tree1".to_string(),
+        })
+        .unwrap();
 
-    dialogue.trees_mut()[0].add_branch(branch1);
-    dialogue.trees_mut()[1].add_branch(branch2);
+    dialogue
+        .apply_action(Action::AppendMessage {
+            branch_id: branch2_id,
+            message_content: "Message in tree2".to_string(),
+        })
+        .unwrap();
 
-    // Verify messages can be found across different trees
+    let branch1 = dialogue.get_branch_by_id(branch1_id).unwrap();
+    let branch2 = dialogue.get_branch_by_id(branch2_id).unwrap();
+    let message1_id = branch1.messages()[0].id();
+    let message2_id = branch2.messages()[0].id();
+
     assert_eq!(
         dialogue.get_message_by_id(message1_id).unwrap().content(),
         "Message in tree1"
@@ -179,7 +183,6 @@ fn helper_methods_work_across_multiple_trees() {
         "Message in tree2"
     );
 
-    // Verify branches can be found across different trees
     assert_eq!(
         dialogue.get_branch_by_id(branch1_id).unwrap().name(),
         "branch1"
