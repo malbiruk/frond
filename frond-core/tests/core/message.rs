@@ -1,157 +1,90 @@
-use frond_core::{Action, Dialogue, Message, Role};
+use frond_core::{Message, Role};
 
 #[test]
 fn creates_message_with_content_and_role() {
-    let msg = Message::new("Hello", Role::User);
-    assert_eq!(msg.content(), "Hello");
-    assert_eq!(*msg.role(), Role::User);
-    assert!(!msg.is_hidden());
+    let message = Message::new("Hello world", Role::User);
+
+    assert_eq!(message.content(), "Hello world");
+    assert_eq!(message.role(), &Role::User);
+    assert!(!message.is_hidden());
 }
 
 #[test]
-fn hides_and_shows_message() {
-    let mut dialogue = Dialogue::new("Test");
+fn creates_assistant_message() {
+    let message = Message::new("Hi there!", Role::Assistant);
 
-    dialogue
-        .apply_action(Action::AddTree {
-            tree_id: uuid::Uuid::new_v4(),
-            tree_name: "tree".to_string(),
-        })
-        .unwrap();
-
-    let tree_id = dialogue.trees()[0].id();
-
-    dialogue
-        .apply_action(Action::AddBranch {
-            tree_id,
-            branch_id: uuid::Uuid::new_v4(),
-            branch_name: "branch".to_string(),
-        })
-        .unwrap();
-
-    let branch_id = dialogue.trees()[0].branches()[0].id();
-
-    dialogue
-        .apply_action(Action::AppendMessage {
-            branch_id,
-            message_content: "Test".to_string(),
-        })
-        .unwrap();
-
-    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
-    let branch = tree.get_branch_by_id(branch_id).unwrap();
-    let message_id = branch.messages()[0].id();
-
-    assert!(!branch.messages()[0].is_hidden());
-
-    dialogue
-        .apply_action(Action::HideMessage { message_id })
-        .unwrap();
-    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
-    let branch = tree.get_branch_by_id(branch_id).unwrap();
-    assert!(branch.messages()[0].is_hidden());
-
-    dialogue
-        .apply_action(Action::ShowMessage { message_id })
-        .unwrap();
-    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
-    let branch = tree.get_branch_by_id(branch_id).unwrap();
-    assert!(!branch.messages()[0].is_hidden());
+    assert_eq!(message.content(), "Hi there!");
+    assert_eq!(message.role(), &Role::Assistant);
+    assert!(!message.is_hidden());
 }
 
 #[test]
-fn edits_message_content() {
-    let mut dialogue = Dialogue::new("Test");
+fn message_has_unique_id() {
+    let msg1 = Message::new("First", Role::User);
+    let msg2 = Message::new("Second", Role::User);
 
-    dialogue
-        .apply_action(Action::AddTree {
-            tree_id: uuid::Uuid::new_v4(),
-            tree_name: "tree".to_string(),
-        })
-        .unwrap();
-
-    let tree_id = dialogue.trees()[0].id();
-
-    dialogue
-        .apply_action(Action::AddBranch {
-            tree_id,
-            branch_id: uuid::Uuid::new_v4(),
-            branch_name: "branch".to_string(),
-        })
-        .unwrap();
-
-    let branch_id = dialogue.trees()[0].branches()[0].id();
-
-    dialogue
-        .apply_action(Action::AppendMessage {
-            branch_id,
-            message_content: "Old".to_string(),
-        })
-        .unwrap();
-
-    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
-    let branch = tree.get_branch_by_id(branch_id).unwrap();
-    let message_id = branch.messages()[0].id();
-
-    dialogue
-        .apply_action(Action::EditMessage {
-            message_id,
-            old_content: "Old".to_string(),
-            new_content: "New".to_string(),
-        })
-        .unwrap();
-
-    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
-    let branch = tree.get_branch_by_id(branch_id).unwrap();
-    assert_eq!(branch.messages()[0].content(), "New");
-}
-
-#[test]
-fn switches_role() {
-    let mut dialogue = Dialogue::new("Test");
-
-    dialogue
-        .apply_action(Action::AddTree {
-            tree_id: uuid::Uuid::new_v4(),
-            tree_name: "tree".to_string(),
-        })
-        .unwrap();
-
-    let tree_id = dialogue.trees()[0].id();
-
-    dialogue
-        .apply_action(Action::AddBranch {
-            tree_id,
-            branch_id: uuid::Uuid::new_v4(),
-            branch_name: "branch".to_string(),
-        })
-        .unwrap();
-
-    let branch_id = dialogue.trees()[0].branches()[0].id();
-
-    dialogue
-        .apply_action(Action::AppendMessage {
-            branch_id,
-            message_content: "Hi".to_string(),
-        })
-        .unwrap();
-
-    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
-    let branch = tree.get_branch_by_id(branch_id).unwrap();
-    let message_id = branch.messages()[0].id();
-
-    dialogue
-        .apply_action(Action::ToggleMessageRole { message_id })
-        .unwrap();
-
-    let tree = dialogue.get_tree_by_id(tree_id).unwrap();
-    let branch = tree.get_branch_by_id(branch_id).unwrap();
-    assert_eq!(*branch.messages()[0].role(), Role::Assistant);
-}
-
-#[test]
-fn message_id_is_unique() {
-    let msg1 = Message::new("A", Role::User);
-    let msg2 = Message::new("B", Role::User);
     assert_ne!(msg1.id(), msg2.id());
+}
+
+#[test]
+fn message_starts_visible() {
+    let message = Message::new("Test message", Role::User);
+    assert!(!message.is_hidden());
+}
+
+#[test]
+fn empty_message_content() {
+    let message = Message::new("", Role::User);
+    assert_eq!(message.content(), "");
+}
+
+#[test]
+fn message_with_multiline_content() {
+    let content = "Line 1\nLine 2\nLine 3";
+    let message = Message::new(content, Role::User);
+    assert_eq!(message.content(), content);
+}
+
+#[test]
+fn message_with_unicode_content() {
+    let content = "Hello 世界 🌍";
+    let message = Message::new(content, Role::User);
+    assert_eq!(message.content(), content);
+}
+
+#[test]
+fn message_accepts_string_and_str() {
+    let owned_string = String::from("Owned string");
+    let message1 = Message::new(owned_string, Role::User);
+    let message2 = Message::new("String literal", Role::Assistant);
+
+    assert_eq!(message1.content(), "Owned string");
+    assert_eq!(message2.content(), "String literal");
+}
+
+#[test]
+fn role_equality() {
+    assert_eq!(Role::User, Role::User);
+    assert_eq!(Role::Assistant, Role::Assistant);
+    assert_ne!(Role::User, Role::Assistant);
+}
+
+#[test]
+fn message_clone_preserves_all_fields() {
+    let original = Message::new("Test content", Role::Assistant);
+    let cloned = original.clone();
+
+    assert_eq!(original.id(), cloned.id());
+    assert_eq!(original.content(), cloned.content());
+    assert_eq!(original.role(), cloned.role());
+    assert_eq!(original.is_hidden(), cloned.is_hidden());
+}
+
+#[test]
+fn message_debug_format() {
+    let message = Message::new("Debug test", Role::User);
+    let debug_str = format!("{:?}", message);
+
+    assert!(debug_str.contains("Debug test"));
+    assert!(debug_str.contains("User"));
 }

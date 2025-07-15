@@ -11,7 +11,7 @@ define_core_entity! {
 }
 
 impl Branch {
-    pub fn fork_from(
+    pub(crate) fn fork_from(
         &self,
         message_id: Uuid,
         new_name: impl Into<String>,

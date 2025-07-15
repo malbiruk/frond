@@ -52,7 +52,10 @@ impl Message {
         self.content = content.into();
     }
 
-    pub(crate) fn switch_role(&mut self, role: Role) {
-        self.role = role;
+    pub(crate) fn toggle_role(&mut self) {
+        self.role = match self.role {
+            Role::User => Role::Assistant,
+            Role::Assistant => Role::User,
+        };
     }
 }

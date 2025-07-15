@@ -1,7 +1,7 @@
 pub mod actions;
 pub mod core;
 
-pub use actions::Action;
+pub use actions::{Action, BranchAction, DialogueAction, MessageAction, TreeAction};
 pub use core::branch::{Branch, Messages};
 pub use core::dialogue::{Dialogue, Trees};
 pub use core::error::{BranchError, DialogueError, TreeError};
