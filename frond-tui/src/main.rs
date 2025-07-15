@@ -1,18 +1,14 @@
-use color_eyre::eyre::Result;
-use frond_core::Dialogue;
-use ratatui::prelude::Stylize;
-use ratatui::{
-    DefaultTerminal, Frame,
-    crossterm::event::{self, Event},
-    layout::{Constraint, Layout},
-    style::Color,
-    widgets::{Block, BorderType::Rounded, Paragraph, Widget},
-};
+mod app;
+mod config;
+mod ui;
 
-#[derive(Debug, Default)]
-struct AppState {
-    dialogues: Vec<Dialogue>,
-}
+use app::AppState;
+use color_eyre::eyre::Result;
+use ratatui::{
+    DefaultTerminal,
+    crossterm::event::{self, Event},
+};
+use ui::render;
 
 fn main() -> Result<()> {
     let mut state = AppState::default();
@@ -34,17 +30,4 @@ fn run(mut terminal: DefaultTerminal, app_state: &mut AppState) -> Result<()> {
         }
     }
     Ok(())
-}
-
-fn render(frame: &mut Frame, app_state: &AppState) {
-    let [border_area] = Layout::vertical([Constraint::Fill(1)])
-        .margin(1)
-        .areas(frame.area());
-
-    Block::bordered()
-        .border_type(Rounded)
-        .fg(Color::Yellow)
-        .render(border_area, frame.buffer_mut());
-
-    Paragraph::new("Hello, world!").render(frame.area(), frame.buffer_mut());
 }

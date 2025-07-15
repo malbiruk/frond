@@ -188,7 +188,7 @@ macro_rules! define_core_entity {
                     self.$child_plural.get_index_by_id(child_id)
                 }
 
-                pub(crate) fn [<add_ $child_singular>](&mut self, child: $child) {
+                pub fn [<add_ $child_singular>](&mut self, child: $child) {
                     self.$child_plural.push(child);
                 }
 
