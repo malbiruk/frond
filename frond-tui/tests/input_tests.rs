@@ -217,8 +217,8 @@ fn input_handler_creates_with_config() {
     let handler = InputHandler::new(&config);
 
     // Should not panic and should create successfully
-    // Test that we can get available actions
-    let actions = handler.get_available_actions(Mode::Normal);
+    // Test that we can get essential actions
+    let actions = handler.get_essential_actions(Mode::Normal);
     assert!(!actions.is_empty());
 }
 
@@ -227,11 +227,11 @@ fn input_handler_handles_global_quit_key() {
     let config = Config::default();
     let handler = InputHandler::new(&config);
 
-    let ctrl_q = KeyEvent::new(KeyCode::Char('q'), KeyModifiers::CONTROL);
-    let action = handler.handle_input(ctrl_q, Mode::Normal, None);
+    let q = KeyEvent::new(KeyCode::Char('q'), KeyModifiers::NONE);
+    let action = handler.handle_input(q, Mode::Normal, None);
 
     match action {
-        Some(frond::actions::UIAction::Quit) => {} // Expected
+        Some(frond::actions::UIAction::Common(frond::actions::CommonAction::Quit)) => {} // Expected
         other => panic!("Expected Quit action, got {:?}", other),
     }
 }
@@ -247,7 +247,9 @@ fn input_handler_handles_mode_specific_keys() {
 
     assert!(action.is_some());
     match action.unwrap() {
-        frond::actions::UIAction::EnterEditMode(_) => {} // Expected
+        frond::actions::UIAction::NormalMode(frond::actions::NormalModeAction::EnterEditMode(
+            _,
+        )) => {} // Expected
         other => panic!("Expected EnterEditMode action, got {:?}", other),
     }
 }
@@ -278,14 +280,18 @@ fn input_handler_resolves_context_dependent_actions() {
     let action_without_focus = handler.handle_input(e_key, Mode::Normal, None);
 
     match action_with_focus {
-        Some(frond::actions::UIAction::EnterEditMode(id)) => {
+        Some(frond::actions::UIAction::NormalMode(
+            frond::actions::NormalModeAction::EnterEditMode(id),
+        )) => {
             assert_eq!(id, message_id);
         }
         other => panic!("Expected EnterEditMode with message ID, got {:?}", other),
     }
 
     match action_without_focus {
-        Some(frond::actions::UIAction::EnterEditMode(id)) => {
+        Some(frond::actions::UIAction::NormalMode(
+            frond::actions::NormalModeAction::EnterEditMode(id),
+        )) => {
             assert_eq!(id, Uuid::nil());
         }
         other => panic!("Expected EnterEditMode with nil ID, got {:?}", other),

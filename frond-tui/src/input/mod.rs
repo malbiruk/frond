@@ -1,4 +1,4 @@
-use crate::actions::{ActionRegistry, UIAction};
+use crate::actions::{ActionRegistry, NormalModeAction, UIAction};
 use crate::app::Mode;
 use crate::config::Config;
 use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
@@ -80,19 +80,9 @@ impl InputHandler {
         current_mode: Mode,
         focused_message: Option<Uuid>,
     ) -> Option<UIAction> {
-        // Global key handling first
-        match key_event.code {
-            KeyCode::Char('q') if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
-                return Some(UIAction::Quit);
-            }
-            _ => {}
-        }
-
-        // Mode-specific key handling
         let action_id = self.key_mapping.get_action_id(current_mode, key_event)?;
         let mut action = self.action_registry.get_action(&action_id)?.clone();
 
-        // Context-aware action resolution
         action = self.resolve_context_dependent_action(action, focused_message);
 
         Some(action)
@@ -104,23 +94,31 @@ impl InputHandler {
         focused_message: Option<Uuid>,
     ) -> UIAction {
         match action {
-            UIAction::EnterEditMode(id) if id == Uuid::nil() => {
-                UIAction::EnterEditMode(focused_message.unwrap_or(Uuid::nil()))
+            UIAction::NormalMode(NormalModeAction::EnterEditMode(id)) if id == Uuid::nil() => {
+                UIAction::NormalMode(NormalModeAction::EnterEditMode(
+                    focused_message.unwrap_or(Uuid::nil()),
+                ))
             }
-            UIAction::DeleteMessage(id) if id == Uuid::nil() => {
-                UIAction::DeleteMessage(focused_message.unwrap_or(Uuid::nil()))
+            UIAction::NormalMode(NormalModeAction::DeleteMessage(id)) if id == Uuid::nil() => {
+                UIAction::NormalMode(NormalModeAction::DeleteMessage(
+                    focused_message.unwrap_or(Uuid::nil()),
+                ))
             }
-            UIAction::ForkBranch(id) if id == Uuid::nil() => {
-                UIAction::ForkBranch(focused_message.unwrap_or(Uuid::nil()))
+            UIAction::NormalMode(NormalModeAction::ForkBranch(id)) if id == Uuid::nil() => {
+                UIAction::NormalMode(NormalModeAction::ForkBranch(
+                    focused_message.unwrap_or(Uuid::nil()),
+                ))
             }
-            UIAction::HideMessage(id) if id == Uuid::nil() => {
-                UIAction::HideMessage(focused_message.unwrap_or(Uuid::nil()))
+            UIAction::NormalMode(NormalModeAction::HideMessage(id)) if id == Uuid::nil() => {
+                UIAction::NormalMode(NormalModeAction::HideMessage(
+                    focused_message.unwrap_or(Uuid::nil()),
+                ))
             }
             other => other,
         }
     }
 
-    pub fn get_available_actions(&self, mode: Mode) -> Vec<(&'static str, &UIAction)> {
-        self.action_registry.get_actions_for_mode(mode)
+    pub fn get_essential_actions(&self, mode: Mode) -> Vec<(&'static str, &UIAction)> {
+        self.action_registry.get_essential_actions_for_mode(mode)
     }
 }

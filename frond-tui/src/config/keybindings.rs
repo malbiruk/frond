@@ -36,6 +36,7 @@ impl Default for Keybindings {
             "command_palette".to_string(),
             parse_key_chord("ctrl-p").unwrap(),
         );
+        normal_bindings.insert("quit".to_string(), parse_key_chord("q").unwrap());
 
         mode_bindings.insert(Mode::Normal, normal_bindings);
 

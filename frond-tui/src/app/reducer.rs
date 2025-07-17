@@ -1,50 +1,67 @@
 use super::state::AppState;
-use crate::actions::UIAction;
+use crate::actions::{CommonAction, EditModeAction, NormalModeAction, UIAction};
 use frond_core::{Action, BranchAction, MessageAction, TreeAction};
 use uuid::Uuid;
 
 pub fn reduce(state: &mut AppState, action: UIAction) {
     match action {
-        UIAction::Quit => {
+        UIAction::Common(common_action) => handle_common_action(state, common_action),
+        UIAction::NormalMode(normal_action) => handle_normal_mode_action(state, normal_action),
+        UIAction::EditMode(edit_action) => handle_edit_mode_action(state, edit_action),
+    }
+}
+
+fn handle_common_action(state: &mut AppState, action: CommonAction) {
+    match action {
+        CommonAction::Quit => {
             // Handle quit - this should be handled at the app level
         }
+        CommonAction::ShowError(message) => handle_show_error(state, message),
+        CommonAction::ClearError => handle_clear_error(state),
+        CommonAction::UpdateConfig(config) => handle_update_config(state, config),
+    }
+}
 
+fn handle_normal_mode_action(state: &mut AppState, action: NormalModeAction) {
+    match action {
         // Navigation actions
-        UIAction::ScrollUp => handle_scroll_up(state),
-        UIAction::ScrollDown => handle_scroll_down(state),
+        NormalModeAction::ScrollUp => handle_scroll_up(state),
+        NormalModeAction::ScrollDown => handle_scroll_down(state),
+        NormalModeAction::ScrollToMessage(message_id) => {
+            handle_scroll_to_message(state, message_id)
+        }
+        NormalModeAction::FocusMessage(message_id) => handle_focus_message(state, message_id),
 
         // Mode transitions
-        UIAction::EnterEditMode(message_id) => handle_enter_edit_mode(state, message_id),
-        UIAction::EnterAppendMode => handle_enter_append_mode(state),
-        UIAction::EnterCommandPalette => handle_enter_command_palette(state),
-        UIAction::ExitCurrentMode => handle_exit_current_mode(state),
+        NormalModeAction::EnterEditMode(message_id) => handle_enter_edit_mode(state, message_id),
+        NormalModeAction::EnterAppendMode => handle_enter_append_mode(state),
+        NormalModeAction::EnterCommandPalette => handle_enter_command_palette(state),
 
         // Content actions that map to frond-core
-        UIAction::EditMessage {
+        NormalModeAction::EditMessage {
             message_id,
             content,
         } => handle_edit_message(state, message_id, content),
-        UIAction::AppendMessage(content) => handle_append_message(state, content),
-        UIAction::DeleteMessage(message_id) => handle_delete_message(state, message_id),
-        UIAction::ForkBranch(message_id) => handle_fork_branch(state, message_id),
-        UIAction::HideMessage(message_id) => handle_hide_message(state, message_id),
-        UIAction::ShowMessage(message_id) => handle_show_message(state, message_id),
-        UIAction::ScrollToMessage(message_id) => handle_scroll_to_message(state, message_id),
-        UIAction::FocusMessage(message_id) => handle_focus_message(state, message_id),
+        NormalModeAction::AppendMessage(content) => handle_append_message(state, content),
+        NormalModeAction::DeleteMessage(message_id) => handle_delete_message(state, message_id),
+        NormalModeAction::ForkBranch(message_id) => handle_fork_branch(state, message_id),
+        NormalModeAction::HideMessage(message_id) => handle_hide_message(state, message_id),
+        NormalModeAction::ShowMessage(message_id) => handle_show_message(state, message_id),
 
         // Branch/Tree navigation
-        UIAction::NextBranch => handle_next_branch(state),
-        UIAction::PrevBranch => handle_prev_branch(state),
-        UIAction::NextTree => handle_next_tree(state),
-        UIAction::PrevTree => handle_prev_tree(state),
+        NormalModeAction::NextBranch => handle_next_branch(state),
+        NormalModeAction::PrevBranch => handle_prev_branch(state),
+        NormalModeAction::NextTree => handle_next_tree(state),
+        NormalModeAction::PrevTree => handle_prev_tree(state),
 
         // UI-specific actions
-        UIAction::UpdateConfig(config) => handle_update_config(state, config),
-        UIAction::ShowHelp => handle_show_help(state),
+        NormalModeAction::ShowHelp => handle_show_help(state),
+    }
+}
 
-        // Error handling
-        UIAction::ShowError(message) => handle_show_error(state, message),
-        UIAction::ClearError => handle_clear_error(state),
+fn handle_edit_mode_action(state: &mut AppState, action: EditModeAction) {
+    match action {
+        EditModeAction::ExitCurrentMode => handle_exit_current_mode(state),
     }
 }
 

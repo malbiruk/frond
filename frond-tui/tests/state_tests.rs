@@ -392,7 +392,9 @@ fn app_state_action_dispatcher_integration() {
     let original_scroll = state.scroll_offset;
 
     // Test that state implements ActionDispatcher
-    state.dispatch(UIAction::ScrollDown);
+    state.dispatch(UIAction::NormalMode(
+        frond::actions::NormalModeAction::ScrollDown,
+    ));
 
     // Should have updated scroll position
     assert_eq!(state.scroll_offset, original_scroll + 1);

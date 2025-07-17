@@ -2,177 +2,27 @@ use crate::app::Mode;
 use std::collections::HashMap;
 use uuid::Uuid;
 
+pub mod common;
+pub mod edit_mode;
+pub mod normal_mode;
+
+pub use common::{ActionInfo, CommonAction};
+pub use edit_mode::EditModeAction;
+pub use normal_mode::NormalModeAction;
+
 #[derive(Debug, Clone)]
 pub enum UIAction {
-    // Application control
-    Quit,
-
-    // Navigation actions
-    ScrollUp,
-    ScrollDown,
-    ScrollToMessage(Uuid),
-    FocusMessage(Uuid),
-
-    // Mode transitions
-    EnterEditMode(Uuid),
-    EnterAppendMode,
-    EnterCommandPalette,
-    ExitCurrentMode,
-
-    // Content actions (these will dispatch to frond-core)
-    EditMessage { message_id: Uuid, content: String },
-    AppendMessage(String),
-    DeleteMessage(Uuid),
-    ForkBranch(Uuid),
-    HideMessage(Uuid),
-    ShowMessage(Uuid),
-
-    // Branch navigation
-    NextBranch,
-    PrevBranch,
-    NextTree,
-    PrevTree,
-
-    // UI-specific actions
-    UpdateConfig(crate::config::Config),
-    ShowHelp,
-
-    // Error handling
-    ShowError(String),
-    ClearError,
-}
-
-#[derive(Debug, Clone)]
-pub struct ActionInfo {
-    pub id: &'static str,
-    pub name: &'static str,
-    pub description: &'static str,
-    pub available_in_modes: Vec<Mode>,
-    pub requires_focus: bool,
+    Common(CommonAction),
+    NormalMode(NormalModeAction),
+    EditMode(EditModeAction),
 }
 
 impl UIAction {
     pub fn info(&self) -> ActionInfo {
         match self {
-            UIAction::ScrollUp => ActionInfo {
-                id: "scroll_up",
-                name: "Scroll Up",
-                description: "Scroll up one line",
-                available_in_modes: vec![Mode::Normal],
-                requires_focus: false,
-            },
-            UIAction::ScrollDown => ActionInfo {
-                id: "scroll_down",
-                name: "Scroll Down",
-                description: "Scroll down one line",
-                available_in_modes: vec![Mode::Normal],
-                requires_focus: false,
-            },
-            UIAction::EnterEditMode(_) => ActionInfo {
-                id: "edit_message",
-                name: "Edit Message",
-                description: "Edit the currently focused message",
-                available_in_modes: vec![Mode::Normal],
-                requires_focus: true,
-            },
-            UIAction::EnterAppendMode => ActionInfo {
-                id: "append_message",
-                name: "Append Message",
-                description: "Add a new message to the conversation",
-                available_in_modes: vec![Mode::Normal],
-                requires_focus: false,
-            },
-            UIAction::DeleteMessage(_) => ActionInfo {
-                id: "delete_message",
-                name: "Delete Message",
-                description: "Delete the currently focused message",
-                available_in_modes: vec![Mode::Normal],
-                requires_focus: true,
-            },
-            UIAction::ForkBranch(_) => ActionInfo {
-                id: "fork_branch",
-                name: "Fork Branch",
-                description: "Create a new branch from the current message",
-                available_in_modes: vec![Mode::Normal],
-                requires_focus: true,
-            },
-            UIAction::HideMessage(_) => ActionInfo {
-                id: "hide_message",
-                name: "Hide Message",
-                description: "Exclude the currently focused message from LLM context",
-                available_in_modes: vec![Mode::Normal],
-                requires_focus: true,
-            },
-            UIAction::ShowHelp => ActionInfo {
-                id: "show_help",
-                name: "Show Help",
-                description: "Display help information",
-                available_in_modes: vec![Mode::Normal],
-                requires_focus: false,
-            },
-            UIAction::NextBranch => ActionInfo {
-                id: "next_branch",
-                name: "Next Branch",
-                description: "Switch to the next branch",
-                available_in_modes: vec![Mode::Normal],
-                requires_focus: false,
-            },
-            UIAction::PrevBranch => ActionInfo {
-                id: "prev_branch",
-                name: "Previous Branch",
-                description: "Switch to the previous branch",
-                available_in_modes: vec![Mode::Normal],
-                requires_focus: false,
-            },
-            UIAction::NextTree => ActionInfo {
-                id: "next_tree",
-                name: "Next Tree",
-                description: "Switch to the next tree",
-                available_in_modes: vec![Mode::Normal],
-                requires_focus: false,
-            },
-            UIAction::PrevTree => ActionInfo {
-                id: "prev_tree",
-                name: "Previous Tree",
-                description: "Switch to the previous tree",
-                available_in_modes: vec![Mode::Normal],
-                requires_focus: false,
-            },
-            UIAction::EnterCommandPalette => ActionInfo {
-                id: "command_palette",
-                name: "Command Palette",
-                description: "Open the command palette",
-                available_in_modes: vec![Mode::Normal],
-                requires_focus: false,
-            },
-            UIAction::ExitCurrentMode => ActionInfo {
-                id: "exit_mode",
-                name: "Exit Mode",
-                description: "Exit the current mode",
-                available_in_modes: vec![Mode::Edit(crate::app::EditMode::Append)],
-                requires_focus: false,
-            },
-            UIAction::ScrollToMessage(_) => ActionInfo {
-                id: "scroll_to_message",
-                name: "Scroll to Message",
-                description: "Scroll to a specific message",
-                available_in_modes: vec![Mode::Normal],
-                requires_focus: false,
-            },
-            UIAction::FocusMessage(_) => ActionInfo {
-                id: "focus_message",
-                name: "Focus Message",
-                description: "Focus on a specific message",
-                available_in_modes: vec![Mode::Normal],
-                requires_focus: false,
-            },
-            _ => ActionInfo {
-                id: "unknown",
-                name: "Unknown",
-                description: "Unknown action",
-                available_in_modes: vec![],
-                requires_focus: false,
-            },
+            UIAction::Common(action) => action.info(),
+            UIAction::NormalMode(action) => action.info(),
+            UIAction::EditMode(action) => action.info(),
         }
     }
 }
@@ -191,25 +41,36 @@ impl ActionRegistry {
     pub fn new() -> Self {
         let mut actions = HashMap::new();
 
-        // Register all available actions
-        let action_list = vec![
-            UIAction::ScrollUp,
-            UIAction::ScrollDown,
-            UIAction::EnterEditMode(Uuid::nil()),
-            UIAction::EnterAppendMode,
-            UIAction::DeleteMessage(Uuid::nil()),
-            UIAction::ForkBranch(Uuid::nil()),
-            UIAction::HideMessage(Uuid::nil()),
-            UIAction::ShowHelp,
-            UIAction::NextBranch,
-            UIAction::PrevBranch,
-            UIAction::NextTree,
-            UIAction::PrevTree,
-            UIAction::EnterCommandPalette,
-            UIAction::ExitCurrentMode,
+        // Register common actions
+        let common_actions = vec![
+            UIAction::Common(CommonAction::Quit),
+            UIAction::Common(CommonAction::ClearError),
         ];
 
-        for action in action_list {
+        // Register normal mode actions
+        let normal_actions = vec![
+            UIAction::NormalMode(NormalModeAction::ScrollUp),
+            UIAction::NormalMode(NormalModeAction::ScrollDown),
+            UIAction::NormalMode(NormalModeAction::EnterEditMode(Uuid::nil())),
+            UIAction::NormalMode(NormalModeAction::EnterAppendMode),
+            UIAction::NormalMode(NormalModeAction::EnterCommandPalette),
+            UIAction::NormalMode(NormalModeAction::DeleteMessage(Uuid::nil())),
+            UIAction::NormalMode(NormalModeAction::ForkBranch(Uuid::nil())),
+            UIAction::NormalMode(NormalModeAction::HideMessage(Uuid::nil())),
+            UIAction::NormalMode(NormalModeAction::ShowHelp),
+            UIAction::NormalMode(NormalModeAction::NextBranch),
+            UIAction::NormalMode(NormalModeAction::PrevBranch),
+            UIAction::NormalMode(NormalModeAction::NextTree),
+            UIAction::NormalMode(NormalModeAction::PrevTree),
+        ];
+
+        // Register edit mode actions
+        let edit_actions = vec![UIAction::EditMode(EditModeAction::ExitCurrentMode)];
+
+        // Combine all actions
+        let all_actions = [common_actions, normal_actions, edit_actions].concat();
+
+        for action in all_actions {
             let info = action.info();
             actions.insert(info.id, action);
         }
@@ -231,6 +92,39 @@ impl ActionRegistry {
                     .any(|m| mode_matches(mode, *m))
             })
             .map(|(id, action)| (*id, action))
+            .collect()
+    }
+
+    pub fn get_essential_actions_for_mode(&self, mode: Mode) -> Vec<(&'static str, &UIAction)> {
+        let essential_order = match mode {
+            Mode::Normal => vec![
+                "append_message",
+                "edit_message",
+                "hide_message",
+                "fork_branch",
+                "delete_message",
+                "show_help",
+            ],
+            Mode::Edit(_) => vec!["exit_mode"],
+        };
+
+        essential_order
+            .into_iter()
+            .filter_map(|action_id| {
+                let action = self.actions.get(action_id)?;
+                let info = action.info();
+
+                let available = info
+                    .available_in_modes
+                    .iter()
+                    .any(|m| mode_matches(mode, *m));
+
+                if available {
+                    Some((action_id, action))
+                } else {
+                    None
+                }
+            })
             .collect()
     }
 }

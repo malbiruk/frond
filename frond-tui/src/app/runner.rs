@@ -1,5 +1,5 @@
 use super::AppState;
-use crate::actions::{ActionDispatcher, UIAction};
+use crate::actions::{ActionDispatcher, CommonAction, UIAction};
 use crate::input::InputHandler;
 use color_eyre::eyre::Result;
 use ratatui::{
@@ -25,10 +25,8 @@ impl App {
 
     pub fn run(&mut self, mut terminal: DefaultTerminal) -> Result<()> {
         loop {
-            // Render the UI
             terminal.draw(|frame| crate::ui::render(frame, &self.state))?;
 
-            // Handle input events
             if let Event::Key(key_event) = event::read()? {
                 if let Some(action) = self.input_handler.handle_input(
                     key_event,
@@ -36,9 +34,8 @@ impl App {
                     self.state.focused_message_id,
                 ) {
                     match action {
-                        UIAction::Quit => break,
+                        UIAction::Common(CommonAction::Quit) => break,
                         other => {
-                            // Dispatch the action through the flux system
                             self.state.dispatch(other);
                         }
                     }
