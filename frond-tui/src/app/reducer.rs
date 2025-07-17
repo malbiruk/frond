@@ -68,12 +68,17 @@ fn handle_edit_mode_action(state: &mut AppState, action: EditModeAction) {
 // Navigation handlers
 fn handle_scroll_up(state: &mut AppState) {
     state.scroll_offset = state.scroll_offset.saturating_sub(1);
-    state.update_focused_message_from_scroll();
+    // We'll update focus when rendering, as we need viewport height
 }
 
 fn handle_scroll_down(state: &mut AppState) {
-    state.scroll_offset = state.scroll_offset.saturating_add(1);
-    state.update_focused_message_from_scroll();
+    let total_height = state.get_total_content_height();
+    // Allow scrolling until only one line of content is visible at the top
+    let max_scroll = total_height.saturating_sub(1);
+    if state.scroll_offset < max_scroll {
+        state.scroll_offset = state.scroll_offset.saturating_add(1);
+    }
+    // We'll update focus when rendering, as we need viewport height
 }
 
 // Mode transition handlers
@@ -297,4 +302,20 @@ fn handle_scroll_to_message(state: &mut AppState, message_id: Uuid) {
 
 fn handle_focus_message(state: &mut AppState, message_id: Uuid) {
     state.focused_message_id = Some(message_id);
+    // Center the focused message in the viewport
+    if let Some(message_index) = state.get_message_index(message_id) {
+        let messages = state.current_messages();
+        let mut line_offset: usize = 0;
+        for (i, message) in messages.iter().enumerate() {
+            if i == message_index {
+                // Center this message by setting scroll to position it in the middle
+                let _message_height = state.calculate_message_display_height(message);
+                let viewport_height = 20; // Default estimate - will be updated during render
+                let center_offset = viewport_height / 2;
+                state.scroll_offset = line_offset.saturating_sub(center_offset);
+                break;
+            }
+            line_offset += state.calculate_message_display_height(message);
+        }
+    }
 }

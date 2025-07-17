@@ -25,7 +25,7 @@ impl App {
 
     pub fn run(&mut self, mut terminal: DefaultTerminal) -> Result<()> {
         loop {
-            terminal.draw(|frame| crate::ui::render(frame, &self.state))?;
+            terminal.draw(|frame| crate::ui::render(frame, &mut self.state))?;
 
             if let Event::Key(key_event) = event::read()? {
                 if let Some(action) = self.input_handler.handle_input(

@@ -5,13 +5,10 @@ use ratatui::widgets::Borders;
 use ratatui::widgets::Paragraph;
 use ratatui::{Frame, layout::Rect};
 
-use super::shared::{calculate_dash_count, create_line_with_dashes};
-
 pub fn render(frame: &mut Frame, area: Rect, app_state: &AppState) {
     let breadcrumb_text = build_breadcrumb_text(app_state);
     let token_info = build_token_info(app_state);
-    let title_line = create_title_line(breadcrumb_text, token_info, area.width);
-    let breadcrumb = create_breadcrumb_widget(title_line);
+    let breadcrumb = create_breadcrumb_widget(breadcrumb_text, token_info);
     frame.render_widget(breadcrumb, area);
 }
 
@@ -68,11 +65,11 @@ fn build_token_info(app_state: &AppState) -> String {
     )
 }
 
-fn create_title_line(left_text: String, right_text: String, width: u16) -> Line<'static> {
-    let dash_count = calculate_dash_count(left_text.len(), right_text.len(), width);
-    create_line_with_dashes(left_text, right_text, dash_count)
-}
+fn create_breadcrumb_widget(left_text: String, right_text: String) -> Paragraph<'static> {
+    let block = Block::new()
+        .borders(Borders::TOP)
+        .title(Line::from(format!("{} ", left_text)).left_aligned())
+        .title(Line::from(format!(" {}", right_text)).right_aligned());
 
-fn create_breadcrumb_widget(title_line: Line<'static>) -> Paragraph<'static> {
-    Paragraph::new("").block(Block::new().borders(Borders::TOP).title(title_line))
+    Paragraph::new("").block(block)
 }

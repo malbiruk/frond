@@ -8,8 +8,6 @@ use ratatui::widgets::Borders;
 use ratatui::widgets::Paragraph;
 use ratatui::{Frame, layout::Rect};
 
-use super::shared::{calculate_dash_count, create_line_with_dashes};
-
 pub fn render(frame: &mut Frame, area: Rect, app_state: &AppState) {
     render_status_bar(frame, area, app_state);
     render_help_line(frame, area, app_state);
@@ -18,8 +16,7 @@ pub fn render(frame: &mut Frame, area: Rect, app_state: &AppState) {
 fn render_status_bar(frame: &mut Frame, area: Rect, app_state: &AppState) {
     let mode_text = build_mode_text(app_state);
     let model_info = build_model_info(app_state);
-    let status_line = create_status_line(mode_text, model_info, area.width);
-    let status_widget = create_status_widget(status_line);
+    let status_widget = create_status_widget(mode_text, model_info);
     frame.render_widget(status_widget, area);
 }
 
@@ -34,13 +31,13 @@ fn build_model_info(app_state: &AppState) -> String {
     )
 }
 
-fn create_status_line(left_text: String, right_text: String, width: u16) -> Line<'static> {
-    let dash_count = calculate_dash_count(left_text.len(), right_text.len(), width);
-    create_line_with_dashes(left_text, right_text, dash_count)
-}
+fn create_status_widget(left_text: String, right_text: String) -> Paragraph<'static> {
+    let block = Block::new()
+        .borders(Borders::TOP)
+        .title(Line::from(format!("{} ", left_text)).left_aligned())
+        .title(Line::from(format!(" {}", right_text)).right_aligned());
 
-fn create_status_widget(status_line: Line<'static>) -> Paragraph<'static> {
-    Paragraph::new("").block(Block::new().borders(Borders::TOP).title(status_line))
+    Paragraph::new("").block(block)
 }
 
 fn render_help_line(frame: &mut Frame, area: Rect, app_state: &AppState) {

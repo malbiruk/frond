@@ -5,10 +5,10 @@ use super::layout::AppLayout;
 
 mod breadcrumb;
 mod content;
-mod shared;
+
 mod status;
 
-pub fn render(frame: &mut Frame, app_state: &AppState) {
+pub fn render(frame: &mut Frame, app_state: &mut AppState) {
     let layout = AppLayout::new(frame.area(), app_state.mode);
 
     let AppLayout::Normal {
