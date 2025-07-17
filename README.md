@@ -11,6 +11,8 @@
 3. **structured thinking space**
 	- you see the full picture: folders → dialogues → trees → branches → messages. context for the llm stays tight, but you don’t lose the broader map.
 
+chats with LLM as knowledge base instead of the usual ephemeral chats.
+
 ## why?
 
 interacting with LLMs is powerful — to learn, code, brainstorm, write — but most clients limit how you manage the conversation.
@@ -23,9 +25,10 @@ usual web apps:
 - hard to navigate or search past chats
 
 `frond` gives you:
+- chats with LLM as a knowledge base instead of the usual ephemeral chats
 - full context control (edit anything, reorder, hide, split/merge, switch roles)
 - clear token usage
-- branching, folders, tags
+- conversation branching
 - full edit history and checkpoints
 - proper search (by folder/dialogue/branch/message, filtered by tag etc.)
 
