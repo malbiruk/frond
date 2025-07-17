@@ -1,5 +1,6 @@
 use crate::actions::{ActionDispatcher, UIAction};
 use crate::config::Config;
+use crate::ui::normal_mode::scrolling;
 use frond_core::Dialogue;
 use ratatui::widgets::ScrollbarState;
 use uuid::Uuid;
@@ -100,31 +101,12 @@ impl AppState {
         viewport_width: u16,
     ) {
         let messages = self.current_messages();
-        if messages.is_empty() {
-            return;
-        }
-
-        let center_line = self.scroll_offset + viewport_height / 2;
-
-        let center_line_usize: usize = if center_line < 0 {
-            0
-        } else {
-            center_line as usize
-        };
-
-        let mut current_line = 0;
-        for message in &messages {
-            let message_height = self.calculate_message_display_height(message, viewport_width);
-            if current_line + message_height > center_line_usize {
-                self.focused_message_id = Some(message.id());
-                return;
-            }
-            current_line += message_height;
-        }
-
-        if let Some(last_message) = messages.last() {
-            self.focused_message_id = Some(last_message.id());
-        }
+        self.focused_message_id = scrolling::update_focused_message_from_scroll(
+            &messages,
+            self.scroll_offset,
+            viewport_height,
+            viewport_width,
+        );
     }
 
     pub fn calculate_message_display_height(
@@ -132,44 +114,22 @@ impl AppState {
         message: &frond_core::Message,
         viewport_width: u16,
     ) -> usize {
-        let content_width = viewport_width.saturating_sub(4) as usize;
-        let mut line_count = 0;
-        for line in message.content().lines() {
-            if line.is_empty() {
-                line_count += 1;
-            } else {
-                line_count += line.len().div_ceil(content_width);
-            }
-        }
-        if line_count == 0 {
-            line_count = 1;
-        }
-        line_count + 2
+        scrolling::calculate_message_display_height(message, viewport_width)
     }
 
     pub fn get_total_content_height(&self, viewport_width: u16) -> usize {
         let messages = self.current_messages();
-        let total: usize = messages
-            .iter()
-            .map(|msg| self.calculate_message_display_height(msg, viewport_width))
-            .sum();
-        total.max(1)
+        scrolling::calculate_total_content_height(&messages, viewport_width)
     }
 
     pub fn update_scrollbar_state(&mut self, viewport_height: usize, viewport_width: u16) {
         let total_height = self.get_total_content_height(viewport_width);
-
-        let min_scroll = -(viewport_height as isize - 3);
-        let max_scroll = total_height as isize - 3;
-        let scroll_range = max_scroll - min_scroll;
-
-        let scrollbar_position = (self.scroll_offset - min_scroll).max(0) as usize;
-
-        self.scrollbar_state = self
-            .scrollbar_state
-            .content_length(scroll_range.max(1) as usize)
-            .viewport_content_length(viewport_height)
-            .position(scrollbar_position.min(scroll_range.max(0) as usize));
+        self.scrollbar_state = scrolling::update_scrollbar_state(
+            self.scrollbar_state,
+            self.scroll_offset,
+            viewport_height,
+            total_height,
+        );
     }
 
     pub fn get_message_index(&self, message_id: Uuid) -> Option<usize> {
@@ -206,22 +166,16 @@ impl AppState {
 
     pub fn update_focused_message_after_deletion(&mut self, deleted_index: usize) {
         let messages = self.current_messages();
-        if messages.is_empty() {
-            self.focused_message_id = None;
-        } else if deleted_index < messages.len() {
-            self.focused_message_id = Some(messages[deleted_index].id());
-        } else if deleted_index > 0 {
-            self.focused_message_id = Some(messages[deleted_index - 1].id());
-        }
+        self.focused_message_id =
+            scrolling::update_focused_message_after_deletion(&messages, deleted_index);
     }
 
     pub fn reset_focus_for_new_branch(&mut self) {
         if let Some(branch) = self.current_branch() {
-            if let Some(first_message) = branch.messages().get(0) {
-                self.focused_message_id = Some(first_message.id());
-                self.scroll_offset = 0;
-                self.scrollbar_state = ScrollbarState::default();
-            }
+            let messages: Vec<&frond_core::Message> = branch.messages().iter().collect();
+            self.focused_message_id = scrolling::get_first_message_id(&messages);
+            self.scroll_offset = 0;
+            self.scrollbar_state = ScrollbarState::default();
         }
     }
 

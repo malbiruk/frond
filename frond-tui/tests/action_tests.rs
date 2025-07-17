@@ -174,7 +174,6 @@ fn actions_have_mode_specific_organization() {
         UIAction::NormalMode(NormalModeAction::PrevTree),
         UIAction::NormalMode(NormalModeAction::ScrollToMessage(Uuid::new_v4())),
         UIAction::NormalMode(NormalModeAction::FocusMessage(Uuid::new_v4())),
-        UIAction::NormalMode(NormalModeAction::ShowHelp),
     ];
 
     let common_actions = vec![
@@ -233,7 +232,6 @@ fn actions_requiring_focus_are_properly_marked() {
         UIAction::NormalMode(NormalModeAction::EnterAppendMode),
         UIAction::NormalMode(NormalModeAction::NextBranch),
         UIAction::NormalMode(NormalModeAction::PrevBranch),
-        UIAction::NormalMode(NormalModeAction::ShowHelp),
         UIAction::Common(CommonAction::Quit),
     ];
 

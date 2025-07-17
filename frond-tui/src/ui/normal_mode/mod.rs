@@ -5,7 +5,7 @@ use super::layout::AppLayout;
 
 mod breadcrumb;
 mod content;
-
+pub mod scrolling;
 mod status;
 
 pub fn render(frame: &mut Frame, app_state: &mut AppState) {

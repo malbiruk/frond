@@ -1,5 +1,5 @@
-use crate::app::Mode;
 use super::common::ActionInfo;
+use crate::app::Mode;
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
@@ -28,9 +28,6 @@ pub enum NormalModeAction {
     PrevBranch,
     NextTree,
     PrevTree,
-
-    // UI-specific actions
-    ShowHelp,
 }
 
 impl NormalModeAction {
@@ -152,13 +149,6 @@ impl NormalModeAction {
                 id: "prev_tree",
                 name: "previous tree",
                 description: "switch to the previous tree",
-                available_in_modes: vec![Mode::Normal],
-                requires_focus: false,
-            },
-            NormalModeAction::ShowHelp => ActionInfo {
-                id: "show_help",
-                name: "help",
-                description: "display help information",
                 available_in_modes: vec![Mode::Normal],
                 requires_focus: false,
             },

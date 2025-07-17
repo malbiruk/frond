@@ -1,28 +1,12 @@
-use super::state::AppState;
-use crate::actions::{CommonAction, EditModeAction, NormalModeAction, UIAction};
-use frond_core::{Action, BranchAction, MessageAction, TreeAction};
+use crate::actions::NormalModeAction;
+use crate::app::state::AppState;
+use frond_core::Action;
+use frond_core::BranchAction;
+use frond_core::MessageAction;
+use frond_core::TreeAction;
 use uuid::Uuid;
 
-pub fn reduce(state: &mut AppState, action: UIAction) {
-    match action {
-        UIAction::Common(common_action) => handle_common_action(state, common_action),
-        UIAction::NormalMode(normal_action) => handle_normal_mode_action(state, normal_action),
-        UIAction::EditMode(edit_action) => handle_edit_mode_action(state, edit_action),
-    }
-}
-
-fn handle_common_action(state: &mut AppState, action: CommonAction) {
-    match action {
-        CommonAction::Quit => {
-            // Handle quit - this should be handled at the app level
-        }
-        CommonAction::ShowError(message) => handle_show_error(state, message),
-        CommonAction::ClearError => handle_clear_error(state),
-        CommonAction::UpdateConfig(config) => handle_update_config(state, config),
-    }
-}
-
-fn handle_normal_mode_action(state: &mut AppState, action: NormalModeAction) {
+pub fn handle_normal_mode_action(state: &mut AppState, action: NormalModeAction) {
     match action {
         // Navigation actions
         NormalModeAction::ScrollUp => handle_scroll_up(state),
@@ -53,15 +37,6 @@ fn handle_normal_mode_action(state: &mut AppState, action: NormalModeAction) {
         NormalModeAction::PrevBranch => handle_prev_branch(state),
         NormalModeAction::NextTree => handle_next_tree(state),
         NormalModeAction::PrevTree => handle_prev_tree(state),
-
-        // UI-specific actions
-        NormalModeAction::ShowHelp => handle_show_help(state),
-    }
-}
-
-fn handle_edit_mode_action(state: &mut AppState, action: EditModeAction) {
-    match action {
-        EditModeAction::ExitCurrentMode => handle_exit_current_mode(state),
     }
 }
 
@@ -97,11 +72,6 @@ fn handle_enter_append_mode(state: &mut AppState) {
 fn handle_enter_command_palette(state: &mut AppState) {
     // TODO: Implement command palette mode
     state.error_message = Some("Command palette not implemented yet".to_string());
-}
-
-fn handle_exit_current_mode(state: &mut AppState) {
-    state.mode = crate::app::Mode::Normal;
-    state.clear_error();
 }
 
 // Content action handlers that bridge to frond-core
@@ -265,25 +235,6 @@ fn handle_prev_tree(state: &mut AppState) {
             }
         }
     }
-}
-
-// UI-specific handlers
-fn handle_update_config(state: &mut AppState, config: crate::config::Config) {
-    state.config = config;
-}
-
-fn handle_show_help(state: &mut AppState) {
-    // TODO: Implement help system
-    state.error_message = Some("Help system not implemented yet".to_string());
-}
-
-// Error handling
-fn handle_show_error(state: &mut AppState, message: String) {
-    state.error_message = Some(message);
-}
-
-fn handle_clear_error(state: &mut AppState) {
-    state.error_message = None;
 }
 
 fn handle_scroll_to_message(_state: &mut AppState, _message_id: Uuid) {

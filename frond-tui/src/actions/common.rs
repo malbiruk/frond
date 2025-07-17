@@ -9,6 +9,8 @@ pub enum CommonAction {
     ShowError(String),
     ClearError,
 
+    ShowHelp(Mode),
+
     // Configuration
     UpdateConfig(crate::config::Config),
 }
@@ -51,6 +53,13 @@ impl CommonAction {
                 name: "update config",
                 description: "update application configuration",
                 available_in_modes: vec![Mode::Normal, Mode::Edit(crate::app::EditMode::Append)],
+                requires_focus: false,
+            },
+            CommonAction::ShowHelp(_) => ActionInfo {
+                id: "show_help",
+                name: "help",
+                description: "display help information",
+                available_in_modes: vec![Mode::Normal],
                 requires_focus: false,
             },
         }

@@ -45,6 +45,7 @@ impl ActionRegistry {
         let common_actions = vec![
             UIAction::Common(CommonAction::Quit),
             UIAction::Common(CommonAction::ClearError),
+            UIAction::Common(CommonAction::ShowHelp(Mode::Normal)),
         ];
 
         // Register normal mode actions
@@ -57,7 +58,6 @@ impl ActionRegistry {
             UIAction::NormalMode(NormalModeAction::DeleteMessage(Uuid::nil())),
             UIAction::NormalMode(NormalModeAction::ForkBranch(Uuid::nil())),
             UIAction::NormalMode(NormalModeAction::HideMessage(Uuid::nil())),
-            UIAction::NormalMode(NormalModeAction::ShowHelp),
             UIAction::NormalMode(NormalModeAction::NextBranch),
             UIAction::NormalMode(NormalModeAction::PrevBranch),
             UIAction::NormalMode(NormalModeAction::NextTree),

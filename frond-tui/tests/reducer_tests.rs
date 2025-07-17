@@ -584,6 +584,7 @@ fn reducer_handles_all_action_types_without_panic() {
         UIAction::Common(CommonAction::Quit),
         UIAction::Common(CommonAction::ShowError("test".to_string())),
         UIAction::Common(CommonAction::ClearError),
+        UIAction::Common(CommonAction::ShowHelp(Mode::Normal)),
         // Normal mode actions
         UIAction::NormalMode(NormalModeAction::ScrollUp),
         UIAction::NormalMode(NormalModeAction::ScrollDown),
@@ -593,7 +594,6 @@ fn reducer_handles_all_action_types_without_panic() {
         UIAction::NormalMode(NormalModeAction::DeleteMessage(message_id)),
         UIAction::NormalMode(NormalModeAction::NextBranch),
         UIAction::NormalMode(NormalModeAction::PrevBranch),
-        UIAction::NormalMode(NormalModeAction::ShowHelp),
         // Edit mode actions
         UIAction::EditMode(EditModeAction::ExitCurrentMode),
     ];
