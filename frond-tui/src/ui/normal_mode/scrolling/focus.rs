@@ -62,3 +62,46 @@ pub fn update_focused_message_after_deletion(
 pub fn get_first_message_id(messages: &[&Message]) -> Option<Uuid> {
     messages.first().map(|m| m.id())
 }
+
+pub fn calculate_scroll_to_focus_message(
+    messages: &[&Message],
+    message_id: Uuid,
+    viewport_height: isize,
+    viewport_width: u16,
+) -> Option<isize> {
+    let message_y_position = calculate_message_y_position(messages, message_id, viewport_width)?;
+    let message_height = find_message_height(messages, message_id, viewport_width)?;
+
+    let message_center = message_y_position as isize + (message_height as isize / 2);
+    let viewport_center = viewport_height / 2;
+
+    Some(message_center - viewport_center)
+}
+
+fn calculate_message_y_position(
+    messages: &[&Message],
+    target_message_id: Uuid,
+    viewport_width: u16,
+) -> Option<usize> {
+    let mut y_position = 0;
+
+    for message in messages {
+        if message.id() == target_message_id {
+            return Some(y_position);
+        }
+        y_position += super::calculate_message_display_height(message, viewport_width);
+    }
+
+    None
+}
+
+fn find_message_height(
+    messages: &[&Message],
+    target_message_id: Uuid,
+    viewport_width: u16,
+) -> Option<usize> {
+    messages
+        .iter()
+        .find(|msg| msg.id() == target_message_id)
+        .map(|msg| super::calculate_message_display_height(msg, viewport_width))
+}

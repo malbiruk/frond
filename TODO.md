@@ -1,6 +1,3 @@
-- [ ] add more tests
-- [ ] refactor scrolling
-- [ ] make default render of conversations to focus on last message
-- [ ] switching between branches keeps focus on same message index, between trees -- default focus on last message
 - [ ] add pgup, pgdown, home, end actions
+- [ ] implement hiding messages
 - [ ] add Normal "submodes": Normal > Message/Branch/Tree/Dialogue

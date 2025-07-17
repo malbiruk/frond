@@ -5,11 +5,13 @@ use ratatui::style::Color;
 use ratatui::style::Style;
 use ratatui::widgets::{Block, Paragraph, Scrollbar, ScrollbarOrientation, Wrap};
 use ratatui::{Frame, layout::Rect};
+use uuid;
 
 pub fn render(frame: &mut Frame, area: Rect, app_state: &mut AppState) {
     let viewport_height = area.height as usize;
     let viewport_width = area.width;
 
+    resolve_pending_focus_request(app_state, viewport_height, viewport_width);
     update_focus_and_scroll_state(app_state, viewport_height, viewport_width);
 
     let messages = app_state.current_messages();
@@ -21,6 +23,87 @@ pub fn render(frame: &mut Frame, area: Rect, app_state: &mut AppState) {
 
     render_messages_with_scroll(frame, area, messages, app_state, viewport_width);
     render_scrollbar(frame, area, app_state);
+}
+
+fn resolve_pending_focus_request(
+    app_state: &mut AppState,
+    viewport_height: usize,
+    viewport_width: u16,
+) {
+    if let Some(request) = app_state.pending_focus_request.take() {
+        let messages = app_state.current_messages();
+
+        let focus_result = match request {
+            crate::app::state::FocusRequest::Message(message_id) => resolve_focus_specific_message(
+                &messages,
+                message_id,
+                viewport_height,
+                viewport_width,
+            ),
+            crate::app::state::FocusRequest::LastMessage => {
+                resolve_focus_last_message(&messages, viewport_height, viewport_width)
+            }
+            crate::app::state::FocusRequest::SameIndexOrLast { previous_index } => {
+                resolve_focus_same_index_or_last(
+                    &messages,
+                    previous_index,
+                    viewport_height,
+                    viewport_width,
+                )
+            }
+        };
+
+        if let Some((message_id, scroll_offset)) = focus_result {
+            app_state.focused_message_id = Some(message_id);
+            app_state.scroll_offset = scroll_offset;
+        }
+    }
+}
+
+fn resolve_focus_specific_message(
+    messages: &[&frond_core::Message],
+    message_id: uuid::Uuid,
+    viewport_height: usize,
+    viewport_width: u16,
+) -> Option<(uuid::Uuid, isize)> {
+    scrolling::calculate_scroll_to_focus_message(
+        messages,
+        message_id,
+        viewport_height as isize,
+        viewport_width,
+    )
+    .map(|scroll_offset| (message_id, scroll_offset))
+}
+
+fn resolve_focus_last_message(
+    messages: &[&frond_core::Message],
+    viewport_height: usize,
+    viewport_width: u16,
+) -> Option<(uuid::Uuid, isize)> {
+    if let Some(last_message) = messages.last() {
+        resolve_focus_specific_message(messages, last_message.id(), viewport_height, viewport_width)
+    } else {
+        None
+    }
+}
+
+fn resolve_focus_same_index_or_last(
+    messages: &[&frond_core::Message],
+    previous_index: usize,
+    viewport_height: usize,
+    viewport_width: u16,
+) -> Option<(uuid::Uuid, isize)> {
+    let target_index = previous_index.min(messages.len().saturating_sub(1));
+    if let Some(target_message) = messages.get(target_index) {
+        resolve_focus_specific_message(
+            messages,
+            target_message.id(),
+            viewport_height,
+            viewport_width,
+        )
+    } else {
+        None
+    }
 }
 
 fn update_focus_and_scroll_state(

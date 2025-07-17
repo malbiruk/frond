@@ -5,6 +5,13 @@ use frond_core::Dialogue;
 use ratatui::widgets::ScrollbarState;
 use uuid::Uuid;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FocusRequest {
+    Message(Uuid),
+    LastMessage,
+    SameIndexOrLast { previous_index: usize },
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Mode {
     Normal,
@@ -35,6 +42,9 @@ pub struct AppState {
     pub scroll_offset: isize,
     pub scrollbar_state: ScrollbarState,
 
+    // Focus request (processed during render)
+    pub pending_focus_request: Option<FocusRequest>,
+
     // Error state
     pub error_message: Option<String>,
 }
@@ -51,24 +61,29 @@ impl Default for AppState {
                 .and_then(|t| t.branches().get(0))
                 .map(|b| b.id())
         });
-        let message_id = branch_id.and_then(|bid| {
-            dialogue
-                .get_branch_by_id(bid)
-                .and_then(|b| b.messages().get(0))
-                .map(|m| m.id())
-        });
 
-        Self {
+        let mut state = Self {
             dialogue,
             mode: Mode::Normal,
             config: Config::default(),
             current_tree_id: tree_id,
             current_branch_id: branch_id,
-            focused_message_id: message_id,
+            focused_message_id: None,
             scroll_offset: 0,
             scrollbar_state: ScrollbarState::default(),
+            pending_focus_request: None,
             error_message: None,
+        };
+
+        // Request focus on last message if available
+        if state
+            .current_branch()
+            .is_some_and(|b| !b.messages().is_empty())
+        {
+            state.pending_focus_request = Some(FocusRequest::LastMessage);
         }
+
+        state
     }
 }
 

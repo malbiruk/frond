@@ -172,8 +172,11 @@ fn actions_have_mode_specific_organization() {
         UIAction::NormalMode(NormalModeAction::PrevBranch),
         UIAction::NormalMode(NormalModeAction::NextTree),
         UIAction::NormalMode(NormalModeAction::PrevTree),
-        UIAction::NormalMode(NormalModeAction::ScrollToMessage(Uuid::new_v4())),
-        UIAction::NormalMode(NormalModeAction::FocusMessage(Uuid::new_v4())),
+        UIAction::NormalMode(NormalModeAction::FocusMessage {
+            message_id: Uuid::new_v4(),
+            viewport_height: 20,
+            viewport_width: 80,
+        }),
     ];
 
     let common_actions = vec![

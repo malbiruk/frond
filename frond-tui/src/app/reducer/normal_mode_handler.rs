@@ -1,5 +1,6 @@
 use crate::actions::NormalModeAction;
-use crate::app::state::AppState;
+use crate::app::state::{AppState, FocusRequest};
+
 use frond_core::Action;
 use frond_core::BranchAction;
 use frond_core::MessageAction;
@@ -11,10 +12,11 @@ pub fn handle_normal_mode_action(state: &mut AppState, action: NormalModeAction)
         // Navigation actions
         NormalModeAction::ScrollUp => handle_scroll_up(state),
         NormalModeAction::ScrollDown => handle_scroll_down(state),
-        NormalModeAction::ScrollToMessage(message_id) => {
-            handle_scroll_to_message(state, message_id)
-        }
-        NormalModeAction::FocusMessage(message_id) => handle_focus_message(state, message_id),
+        NormalModeAction::FocusMessage {
+            message_id,
+            viewport_height,
+            viewport_width,
+        } => handle_focus_message(state, message_id, viewport_height, viewport_width),
 
         // Mode transitions
         NormalModeAction::EnterEditMode(message_id) => handle_enter_edit_mode(state, message_id),
@@ -178,10 +180,21 @@ fn handle_next_branch(state: &mut AppState) {
         if let Some(current_branch_id) = state.current_branch_id {
             let branches = tree.branches();
             if let Some(current_index) = branches.get_index_by_id(current_branch_id) {
+                // Get current focused message index before switching
+                let current_focused_index = state
+                    .focused_message_id
+                    .and_then(|id| state.get_message_index(id))
+                    .unwrap_or(0);
+
                 let next_index = (current_index + 1) % branches.len();
                 if let Some(next_branch) = branches.get(next_index) {
                     state.current_branch_id = Some(next_branch.id());
                     state.reset_focus_for_new_branch();
+
+                    // Request focus on same index, or last message if new branch is shorter
+                    state.pending_focus_request = Some(FocusRequest::SameIndexOrLast {
+                        previous_index: current_focused_index,
+                    });
                 }
             }
         }
@@ -193,6 +206,12 @@ fn handle_prev_branch(state: &mut AppState) {
         if let Some(current_branch_id) = state.current_branch_id {
             let branches = tree.branches();
             if let Some(current_index) = branches.get_index_by_id(current_branch_id) {
+                // Get current focused message index before switching
+                let current_focused_index = state
+                    .focused_message_id
+                    .and_then(|id| state.get_message_index(id))
+                    .unwrap_or(0);
+
                 let prev_index = if current_index == 0 {
                     branches.len() - 1
                 } else {
@@ -201,6 +220,11 @@ fn handle_prev_branch(state: &mut AppState) {
                 if let Some(prev_branch) = branches.get(prev_index) {
                     state.current_branch_id = Some(prev_branch.id());
                     state.reset_focus_for_new_branch();
+
+                    // Request focus on same index, or last message if new branch is shorter
+                    state.pending_focus_request = Some(FocusRequest::SameIndexOrLast {
+                        previous_index: current_focused_index,
+                    });
                 }
             }
         }
@@ -215,6 +239,9 @@ fn handle_next_tree(state: &mut AppState) {
             if let Some(next_tree) = trees.get(next_index) {
                 state.current_tree_id = Some(next_tree.id());
                 state.reset_focus_for_new_tree();
+
+                // Request focus on last message of new tree
+                state.pending_focus_request = Some(FocusRequest::LastMessage);
             }
         }
     }
@@ -232,15 +259,20 @@ fn handle_prev_tree(state: &mut AppState) {
             if let Some(prev_tree) = trees.get(prev_index) {
                 state.current_tree_id = Some(prev_tree.id());
                 state.reset_focus_for_new_tree();
+
+                // Request focus on last message of new tree
+                state.pending_focus_request = Some(FocusRequest::LastMessage);
             }
         }
     }
 }
 
-fn handle_scroll_to_message(_state: &mut AppState, _message_id: Uuid) {
-    todo!("Implement scrolling to message")
-}
-
-fn handle_focus_message(state: &mut AppState, message_id: Uuid) {
-    handle_scroll_to_message(state, message_id);
+fn handle_focus_message(
+    state: &mut AppState,
+    message_id: Uuid,
+    _viewport_height: isize,
+    _viewport_width: u16,
+) {
+    // Request focus - will be resolved during render with real viewport
+    state.pending_focus_request = Some(FocusRequest::Message(message_id));
 }

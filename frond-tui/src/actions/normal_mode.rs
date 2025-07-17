@@ -7,8 +7,11 @@ pub enum NormalModeAction {
     // Navigation actions
     ScrollUp,
     ScrollDown,
-    ScrollToMessage(Uuid),
-    FocusMessage(Uuid),
+    FocusMessage {
+        message_id: Uuid,
+        viewport_height: isize,
+        viewport_width: u16,
+    },
 
     // Mode transitions
     EnterEditMode(Uuid),
@@ -16,7 +19,10 @@ pub enum NormalModeAction {
     EnterCommandPalette,
 
     // Content actions (these will dispatch to frond-core)
-    EditMessage { message_id: Uuid, content: String },
+    EditMessage {
+        message_id: Uuid,
+        content: String,
+    },
     AppendMessage(String),
     DeleteMessage(Uuid),
     ForkBranch(Uuid),
@@ -47,14 +53,7 @@ impl NormalModeAction {
                 available_in_modes: vec![Mode::Normal],
                 requires_focus: false,
             },
-            NormalModeAction::ScrollToMessage(_) => ActionInfo {
-                id: "scroll_to_message",
-                name: "scroll to message",
-                description: "scroll to a specific message",
-                available_in_modes: vec![Mode::Normal],
-                requires_focus: false,
-            },
-            NormalModeAction::FocusMessage(_) => ActionInfo {
+            NormalModeAction::FocusMessage { .. } => ActionInfo {
                 id: "focus_message",
                 name: "focus message",
                 description: "focus on a specific message",
