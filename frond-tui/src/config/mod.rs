@@ -33,3 +33,22 @@ impl Default for Config {
         }
     }
 }
+
+impl Config {
+    pub fn get_key_for_action(
+        &self,
+        mode: crate::app::Mode,
+        action_id: &str,
+    ) -> Option<&crate::input::KeyChord> {
+        self.keybindings.get_key_for_action(mode, action_id)
+    }
+
+    pub fn set_key_for_action(
+        &mut self,
+        mode: crate::app::Mode,
+        action_id: String,
+        key: crate::input::KeyChord,
+    ) {
+        self.keybindings.set_key_for_action(mode, action_id, key);
+    }
+}
