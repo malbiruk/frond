@@ -6,10 +6,11 @@ use ratatui::widgets::{Block, Paragraph, Scrollbar, ScrollbarOrientation, Wrap};
 use ratatui::{Frame, layout::Rect};
 
 pub fn render(frame: &mut Frame, area: Rect, app_state: &mut AppState) {
-    // Update focus and scrollbar state first
     let viewport_height = area.height as usize;
-    app_state.update_focused_message_from_scroll(viewport_height);
-    app_state.update_scrollbar_state(viewport_height);
+    let viewport_width = area.width;
+
+    update_focus_from_visible_content(app_state, viewport_height, viewport_width);
+    app_state.update_scrollbar_state(viewport_height, viewport_width);
 
     let messages = app_state.current_messages();
 
@@ -18,8 +19,80 @@ pub fn render(frame: &mut Frame, area: Rect, app_state: &mut AppState) {
         return;
     }
 
-    render_messages_with_scroll(frame, area, messages, app_state);
+    render_messages_with_scroll(frame, area, messages, app_state, viewport_width);
     render_scrollbar(frame, area, app_state);
+}
+
+fn update_focus_from_visible_content(
+    app_state: &mut AppState,
+    viewport_height: usize,
+    viewport_width: u16,
+) {
+    let messages_vec = app_state.current_messages();
+    let messages = &messages_vec;
+    if messages.is_empty() {
+        app_state.focused_message_id = None;
+        return;
+    }
+
+    let total_content_height = get_total_content_height_for_messages(messages, viewport_width);
+
+    let min_scroll = -(viewport_height as isize - 3);
+    let max_scroll = total_content_height as isize - 3;
+
+    let clamped_scroll_offset = app_state.scroll_offset.clamp(min_scroll, max_scroll);
+    let center_line = clamped_scroll_offset + viewport_height as isize / 2;
+
+    let focused_message_id = if center_line < 0 {
+        messages.first().map(|m| m.id())
+    } else if center_line >= total_content_height as isize {
+        messages.last().map(|m| m.id())
+    } else {
+        let mut current_line = 0_isize;
+        let mut found_id = None;
+        for message in messages {
+            let message_height = calculate_message_height_lines(message, viewport_width) as isize;
+            if current_line + message_height > center_line {
+                found_id = Some(message.id());
+                break;
+            }
+            current_line += message_height;
+        }
+        found_id.or_else(|| messages.last().map(|m| m.id()))
+    };
+
+    app_state.scroll_offset = clamped_scroll_offset;
+    app_state.focused_message_id = focused_message_id;
+}
+
+fn get_total_content_height_for_messages(
+    messages: &[&frond_core::Message],
+    viewport_width: u16,
+) -> usize {
+    messages
+        .iter()
+        .map(|msg| calculate_message_height_lines(msg, viewport_width))
+        .sum::<usize>()
+        .max(1)
+}
+
+fn calculate_message_height_lines(message: &frond_core::Message, viewport_width: u16) -> usize {
+    let border_size = 2;
+    let padding = 2;
+    let content_width = viewport_width.saturating_sub(border_size + padding) as usize;
+    calculate_wrapped_line_count(message.content(), content_width) + border_size as usize
+}
+
+fn calculate_wrapped_line_count(content: &str, content_width: usize) -> usize {
+    let mut line_count = 0;
+    for line in content.lines() {
+        if line.is_empty() {
+            line_count += 1;
+        } else {
+            line_count += line.len().div_ceil(content_width);
+        }
+    }
+    if line_count == 0 { 1 } else { line_count }
 }
 
 fn render_empty_message(frame: &mut Frame, area: Rect) {
@@ -38,8 +111,8 @@ fn render_messages_with_scroll(
     area: Rect,
     messages: Vec<&frond_core::Message>,
     app_state: &AppState,
+    viewport_width: u16,
 ) {
-    // Reserve space for scrollbar
     let content_area = Rect {
         x: area.x,
         y: area.y,
@@ -47,15 +120,15 @@ fn render_messages_with_scroll(
         height: area.height,
     };
 
-    // Calculate which messages are visible and their positions
-    let mut y_offset = content_area.y as isize - app_state.scroll_offset as isize;
+    // Handle negative scroll offset
+    let mut y_offset = content_area.y as isize - app_state.scroll_offset;
 
     for message in &messages {
         let is_focused = app_state.focused_message_id == Some(message.id());
-        let message_height = calculate_message_height(message, content_area.width);
+        let message_height = calculate_message_height_lines(message, viewport_width) as isize;
 
         // Check if this message is visible in the viewport
-        let message_bottom = y_offset + message_height as isize;
+        let message_bottom = y_offset + message_height;
         let viewport_bottom = (content_area.y + content_area.height) as isize;
 
         if message_bottom > content_area.y as isize && y_offset < viewport_bottom {
@@ -78,35 +151,13 @@ fn render_messages_with_scroll(
             }
         }
 
-        y_offset += message_height as isize;
+        y_offset += message_height;
 
         // Early exit if we're below the viewport
         if y_offset >= viewport_bottom {
             break;
         }
     }
-}
-
-fn calculate_message_height(message: &frond_core::Message, width: u16) -> u16 {
-    let content_width = width.saturating_sub(4); // Account for borders and padding
-    let content = message.content();
-
-    // Calculate wrapped lines
-    let mut line_count = 0;
-    for line in content.lines() {
-        if line.is_empty() {
-            line_count += 1;
-        } else {
-            let chars_per_line = content_width as usize;
-            line_count += (line.len() + chars_per_line - 1) / chars_per_line; // Ceiling division
-        }
-    }
-
-    if line_count == 0 {
-        line_count = 1; // At least one line for empty content
-    }
-
-    line_count as u16 + 2 // +2 for top and bottom borders
 }
 
 fn create_message_widget(

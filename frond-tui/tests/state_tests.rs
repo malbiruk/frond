@@ -157,7 +157,7 @@ fn app_state_update_focused_message_from_scroll_sets_correct_message() {
     let mut state = create_app_state_with_dialogue(dialogue);
 
     // Update focus based on scroll position
-    state.update_focused_message_from_scroll(20);
+    state.update_focused_message_from_scroll(20, 76);
 
     // Verify that focus is set to some valid message
     assert!(state.focused_message_id.is_some());
@@ -175,7 +175,7 @@ fn app_state_update_focused_message_from_scroll_handles_out_of_bounds() {
 
     // Set scroll beyond available messages
     state.scroll_offset = 999;
-    state.update_focused_message_from_scroll(20);
+    state.update_focused_message_from_scroll(20, 76);
 
     let messages = state.current_messages();
     // When scroll is out of bounds, should focus the last message
@@ -313,7 +313,7 @@ fn app_state_handles_empty_dialogue() {
     assert!(state.focused_message_id.is_none());
 
     // Verify all navigation methods handle empty state gracefully
-    state.update_focused_message_from_scroll(20);
+    state.update_focused_message_from_scroll(20, 76);
     state.reset_focus_for_new_branch();
     state.scroll_for_edit_mode();
 }
@@ -382,7 +382,7 @@ fn app_state_all_helper_methods_handle_invalid_state() {
     assert!(!state.has_messages_after(Uuid::new_v4()));
 
     // These should not panic
-    state.update_focused_message_from_scroll(20);
+    state.update_focused_message_from_scroll(20, 76);
     state.update_focused_message_after_deletion(0);
     state.reset_focus_for_new_branch();
     state.reset_focus_for_new_tree();
@@ -414,7 +414,7 @@ fn app_state_navigation_consistency_across_operations() {
 
     // Perform various navigation operations
     state.scroll_offset = 2;
-    state.update_focused_message_from_scroll(20);
+    state.update_focused_message_from_scroll(20, 76);
 
     // Verify navigation consistency
     if let Some(focused_id) = state.focused_message_id {
@@ -427,7 +427,7 @@ fn app_state_navigation_consistency_across_operations() {
 
     // Change scroll and verify again
     state.scroll_offset = 0;
-    state.update_focused_message_from_scroll(20);
+    state.update_focused_message_from_scroll(20, 76);
 
     if let Some(focused_id) = state.focused_message_id {
         let messages = state.current_messages();

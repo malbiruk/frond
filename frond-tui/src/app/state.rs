@@ -31,7 +31,7 @@ pub struct AppState {
     pub focused_message_id: Option<Uuid>,
 
     // Scrolling state
-    pub scroll_offset: usize,
+    pub scroll_offset: isize,
     pub scrollbar_state: ScrollbarState,
 
     // Error state
@@ -94,70 +94,82 @@ impl AppState {
             .unwrap_or_default()
     }
 
-    pub fn update_focused_message_from_scroll(&mut self, viewport_height: usize) {
+    pub fn update_focused_message_from_scroll(
+        &mut self,
+        viewport_height: isize,
+        viewport_width: u16,
+    ) {
         let messages = self.current_messages();
         if messages.is_empty() {
             return;
         }
 
-        // Calculate which message should be focused based on the center of the viewport
         let center_line = self.scroll_offset + viewport_height / 2;
 
-        // Find the message that contains the center line
+        let center_line_usize: usize = if center_line < 0 {
+            0
+        } else {
+            center_line as usize
+        };
+
         let mut current_line = 0;
         for message in &messages {
-            let message_height = self.calculate_message_display_height(message);
-            if current_line + message_height > center_line {
+            let message_height = self.calculate_message_display_height(message, viewport_width);
+            if current_line + message_height > center_line_usize {
                 self.focused_message_id = Some(message.id());
                 return;
             }
             current_line += message_height;
         }
 
-        // If we didn't find a message, focus the last one
         if let Some(last_message) = messages.last() {
             self.focused_message_id = Some(last_message.id());
         }
     }
 
-    pub fn calculate_message_display_height(&self, message: &frond_core::Message) -> usize {
-        // More accurate message height calculation
-        let content_width = 76; // Account for borders and padding (80 - 4)
-        let content = message.content();
-
+    pub fn calculate_message_display_height(
+        &self,
+        message: &frond_core::Message,
+        viewport_width: u16,
+    ) -> usize {
+        let content_width = viewport_width.saturating_sub(4) as usize;
         let mut line_count = 0;
-        for line in content.lines() {
+        for line in message.content().lines() {
             if line.is_empty() {
                 line_count += 1;
             } else {
-                line_count += (line.len() + content_width - 1) / content_width; // Ceiling division
+                line_count += line.len().div_ceil(content_width);
             }
         }
-
         if line_count == 0 {
-            line_count = 1; // At least one line for empty content
+            line_count = 1;
         }
-
-        line_count + 2 // +2 for top and bottom borders
+        line_count + 2
     }
 
-    pub fn get_total_content_height(&self) -> usize {
+    pub fn get_total_content_height(&self, viewport_width: u16) -> usize {
         let messages = self.current_messages();
         let total: usize = messages
             .iter()
-            .map(|msg| self.calculate_message_display_height(msg))
+            .map(|msg| self.calculate_message_display_height(msg, viewport_width))
             .sum();
-        total.max(1) // Ensure at least 1 for empty conversations
+        total.max(1)
     }
 
-    pub fn update_scrollbar_state(&mut self, viewport_height: usize) {
-        let total_height = self.get_total_content_height();
-        let max_scroll = total_height.saturating_sub(1);
+    pub fn update_scrollbar_state(&mut self, viewport_height: usize, viewport_width: u16) {
+        let total_height = self.get_total_content_height(viewport_width);
+
+        let min_scroll = -(viewport_height as isize - 3);
+        let max_scroll = total_height as isize - 3;
+        let scroll_range = max_scroll - min_scroll;
+
+        let scrollbar_position = (self.scroll_offset - min_scroll).max(0) as usize;
+
         self.scrollbar_state = self
             .scrollbar_state
-            .content_length(total_height)
+            .content_length(scroll_range.max(1) as usize)
             .viewport_content_length(viewport_height)
-            .position(self.scroll_offset.min(max_scroll));
+            .position(scrollbar_position.min(scroll_range.max(0) as usize));
     }
 
     pub fn get_message_index(&self, message_id: Uuid) -> Option<usize> {
