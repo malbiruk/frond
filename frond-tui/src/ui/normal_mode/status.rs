@@ -60,27 +60,27 @@ fn create_help_line(app_state: &AppState) -> Line<'static> {
     use crate::input::InputHandler;
 
     let input_handler = InputHandler::new(&app_state.config);
-    let available_actions = input_handler.get_essential_actions(app_state.mode);
-    let action_spans = build_action_spans(app_state, &available_actions);
+    let available_schemas = input_handler.get_essential_schemas(app_state.mode);
+    let action_spans = build_action_spans(app_state, &available_schemas);
     Line::from(action_spans)
 }
 
 fn build_action_spans(
     app_state: &AppState,
-    available_actions: &[(&'static str, &crate::actions::UIAction)],
+    available_schemas: &[(&'static str, &crate::actions::ActionSchema)],
 ) -> Vec<Span<'static>> {
     let mut spans = Vec::new();
 
-    for (i, (action_id, action)) in available_actions.iter().enumerate() {
+    for (i, (action_id, schema)) in available_schemas.iter().enumerate() {
         if should_add_separator(i) {
             spans.push(Span::raw("  "));
         }
 
-        if should_skip_action(action, app_state) {
+        if should_skip_schema(schema, app_state) {
             continue;
         }
 
-        if let Some(action_spans) = create_action_spans(app_state, action_id, action) {
+        if let Some(action_spans) = create_action_spans(app_state, action_id, schema) {
             spans.extend(action_spans);
         }
     }
@@ -92,28 +92,26 @@ fn should_add_separator(index: usize) -> bool {
     index > 0
 }
 
-fn should_skip_action(action: &crate::actions::UIAction, app_state: &AppState) -> bool {
-    let action_info = action.info();
-    action_info.requires_focus && app_state.focused_message_id.is_none()
+fn should_skip_schema(schema: &crate::actions::ActionSchema, app_state: &AppState) -> bool {
+    schema.requires_focus() && app_state.focused_message_id.is_none()
 }
 
 fn create_action_spans(
     app_state: &AppState,
     action_id: &str,
-    action: &crate::actions::UIAction,
+    schema: &crate::actions::ActionSchema,
 ) -> Option<Vec<Span<'static>>> {
     let key_chord = app_state
         .config
         .get_key_for_action(app_state.mode, action_id)?;
     let key_display = format_key_chord(key_chord);
-    let action_info = action.info();
 
     Some(vec![
         Span::styled(
             key_display,
             Style::default().fg(app_state.config.theme.help_key_color),
         ),
-        Span::raw(format!(": {}  ", action_info.name)),
+        Span::raw(format!(": {}  ", schema.name())),
     ])
 }
 

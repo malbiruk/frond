@@ -2,7 +2,7 @@ use crate::actions::NormalModeAction;
 use crate::app::state::{AppState, FocusRequest};
 
 use frond_core::Action;
-use frond_core::BranchAction;
+
 use frond_core::MessageAction;
 use frond_core::TreeAction;
 use uuid::Uuid;
@@ -12,23 +12,13 @@ pub fn handle_normal_mode_action(state: &mut AppState, action: NormalModeAction)
         // Navigation actions
         NormalModeAction::ScrollUp => handle_scroll_up(state),
         NormalModeAction::ScrollDown => handle_scroll_down(state),
-        NormalModeAction::FocusMessage {
-            message_id,
-            viewport_height,
-            viewport_width,
-        } => handle_focus_message(state, message_id, viewport_height, viewport_width),
 
         // Mode transitions
         NormalModeAction::EnterEditMode(message_id) => handle_enter_edit_mode(state, message_id),
         NormalModeAction::EnterAppendMode => handle_enter_append_mode(state),
         NormalModeAction::EnterCommandPalette => handle_enter_command_palette(state),
 
-        // Content actions that map to frond-core
-        NormalModeAction::EditMessage {
-            message_id,
-            content,
-        } => handle_edit_message(state, message_id, content),
-        NormalModeAction::AppendMessage(content) => handle_append_message(state, content),
+        // Message actions that use frond-core
         NormalModeAction::DeleteMessage(message_id) => handle_delete_message(state, message_id),
         NormalModeAction::ForkBranch(message_id) => handle_fork_branch(state, message_id),
         NormalModeAction::HideMessage(message_id) => handle_hide_message(state, message_id),
@@ -67,6 +57,7 @@ fn handle_enter_edit_mode(state: &mut AppState, message_id: Uuid) {
 }
 
 fn handle_enter_append_mode(state: &mut AppState) {
+    // Transition to append mode
     state.mode = crate::app::Mode::Edit(crate::app::EditMode::Append);
     state.scroll_for_edit_mode();
 }
@@ -76,44 +67,7 @@ fn handle_enter_command_palette(state: &mut AppState) {
     state.error_message = Some("Command palette not implemented yet".to_string());
 }
 
-// Content action handlers that bridge to frond-core
-fn handle_edit_message(state: &mut AppState, message_id: Uuid, content: String) {
-    let old_content = state
-        .dialogue
-        .get_message_by_id(message_id)
-        .map(|m| m.content().to_string())
-        .unwrap_or_default();
-
-    let core_action = Action::Message(MessageAction::EditMessage {
-        message_id,
-        old_content,
-        new_content: content,
-    });
-
-    if let Err(e) = state.dialogue.apply_action(core_action) {
-        state.error_message = Some(format!("Failed to edit message: {}", e));
-    }
-}
-
-fn handle_append_message(state: &mut AppState, content: String) {
-    if let Some(branch_id) = state.current_branch_id {
-        let core_action = Action::Branch(BranchAction::AppendMessage {
-            branch_id,
-            message_content: content,
-        });
-
-        if let Err(e) = state.dialogue.apply_action(core_action) {
-            state.error_message = Some(format!("Failed to append message: {}", e));
-        } else {
-            // Update focused message to the new one
-            if let Some(branch) = state.current_branch() {
-                if let Some(last_message) = branch.messages().iter().last() {
-                    state.focused_message_id = Some(last_message.id());
-                }
-            }
-        }
-    }
-}
+// Message action handlers that bridge to frond-core
 
 fn handle_delete_message(state: &mut AppState, message_id: Uuid) {
     if let Some(branch_id) = state.current_branch_id {
@@ -265,14 +219,4 @@ fn handle_prev_tree(state: &mut AppState) {
             }
         }
     }
-}
-
-fn handle_focus_message(
-    state: &mut AppState,
-    message_id: Uuid,
-    _viewport_height: isize,
-    _viewport_width: u16,
-) {
-    // Request focus - will be resolved during render with real viewport
-    state.pending_focus_request = Some(FocusRequest::Message(message_id));
 }

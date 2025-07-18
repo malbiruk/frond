@@ -12,3 +12,4 @@ frond-core = { path = "../frond-core" }
 color-eyre = "0.6.5"
 uuid = "1.17.0"
 chrono = "0.4.0"
+strum = { version = "0.26", features = ["derive"] }

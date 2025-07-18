@@ -217,9 +217,9 @@ fn input_handler_creates_with_config() {
     let handler = InputHandler::new(&config);
 
     // Should not panic and should create successfully
-    // Test that we can get essential actions
-    let actions = handler.get_essential_actions(Mode::Normal);
-    assert!(!actions.is_empty());
+    // Test that we can get essential schemas
+    let schemas = handler.get_essential_schemas(Mode::Normal);
+    assert!(!schemas.is_empty());
 }
 
 #[test]

@@ -1,5 +1,62 @@
 use crate::app::Mode;
+use crate::config::Config;
+use strum::EnumIter;
 
+// Schema - parameter-less templates for registry
+#[derive(Debug, Clone, EnumIter)]
+pub enum CommonActionSchema {
+    // Application control
+    Quit,
+
+    // Error handling
+    ShowError,
+    ClearError,
+
+    // Help
+    ShowHelp,
+
+    // Configuration
+    UpdateConfig,
+}
+
+impl CommonActionSchema {
+    pub fn id(&self) -> &'static str {
+        match self {
+            Self::Quit => "quit",
+            Self::ShowError => "show_error",
+            Self::ClearError => "clear_error",
+            Self::ShowHelp => "show_help",
+            Self::UpdateConfig => "update_config",
+        }
+    }
+
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::Quit => "quit",
+            Self::ShowError => "show error",
+            Self::ClearError => "clear error",
+            Self::ShowHelp => "help",
+            Self::UpdateConfig => "update config",
+        }
+    }
+
+    pub fn description(&self) -> &'static str {
+        match self {
+            Self::Quit => "quit the application",
+            Self::ShowError => "display an error message",
+            Self::ClearError => "clear the current error message",
+            Self::ShowHelp => "display help information",
+            Self::UpdateConfig => "update application configuration",
+        }
+    }
+
+    pub fn requires_focus(&self) -> bool {
+        // Common actions typically don't require focus
+        false
+    }
+}
+
+// Action - with real parameters for dispatch
 #[derive(Debug, Clone)]
 pub enum CommonAction {
     // Application control
@@ -9,12 +66,14 @@ pub enum CommonAction {
     ShowError(String),
     ClearError,
 
+    // Help
     ShowHelp(Mode),
 
     // Configuration
-    UpdateConfig(crate::config::Config),
+    UpdateConfig(Config),
 }
 
+// ActionInfo struct for compatibility (can be removed later)
 #[derive(Debug, Clone)]
 pub struct ActionInfo {
     pub id: &'static str,
@@ -22,46 +81,4 @@ pub struct ActionInfo {
     pub description: &'static str,
     pub available_in_modes: Vec<Mode>,
     pub requires_focus: bool,
-}
-
-impl CommonAction {
-    pub fn info(&self) -> ActionInfo {
-        match self {
-            CommonAction::Quit => ActionInfo {
-                id: "quit",
-                name: "quit",
-                description: "quit the application",
-                available_in_modes: vec![Mode::Normal, Mode::Edit(crate::app::EditMode::Append)],
-                requires_focus: false,
-            },
-            CommonAction::ShowError(_) => ActionInfo {
-                id: "show_error",
-                name: "show error",
-                description: "display an error message",
-                available_in_modes: vec![Mode::Normal, Mode::Edit(crate::app::EditMode::Append)],
-                requires_focus: false,
-            },
-            CommonAction::ClearError => ActionInfo {
-                id: "clear_error",
-                name: "clear error",
-                description: "clear the current error message",
-                available_in_modes: vec![Mode::Normal, Mode::Edit(crate::app::EditMode::Append)],
-                requires_focus: false,
-            },
-            CommonAction::UpdateConfig(_) => ActionInfo {
-                id: "update_config",
-                name: "update config",
-                description: "update application configuration",
-                available_in_modes: vec![Mode::Normal, Mode::Edit(crate::app::EditMode::Append)],
-                requires_focus: false,
-            },
-            CommonAction::ShowHelp(_) => ActionInfo {
-                id: "show_help",
-                name: "help",
-                description: "display help information",
-                available_in_modes: vec![Mode::Normal],
-                requires_focus: false,
-            },
-        }
-    }
 }

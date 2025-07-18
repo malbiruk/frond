@@ -1,7 +1,7 @@
 use crate::actions::{ActionDispatcher, UIAction};
 use crate::config::Config;
 use crate::ui::normal_mode::scrolling;
-use frond_core::Dialogue;
+use frond_core::{Action, BranchAction, Dialogue, MessageAction};
 use ratatui::widgets::ScrollbarState;
 use uuid::Uuid;
 
@@ -97,6 +97,50 @@ impl AppState {
     pub fn current_tree(&self) -> Option<&frond_core::Tree> {
         self.current_tree_id
             .and_then(|tree_id| self.dialogue.get_tree_by_id(tree_id))
+    }
+
+    // Internal helper methods - not user actions
+    pub fn focus_message(&mut self, message_id: Uuid) {
+        // Request focus - will be resolved during render with real viewport
+        self.pending_focus_request = Some(FocusRequest::Message(message_id));
+    }
+
+    pub fn edit_message_content(&mut self, message_id: Uuid, content: String) {
+        let old_content = self
+            .dialogue
+            .get_message_by_id(message_id)
+            .map(|m| m.content().to_string())
+            .unwrap_or_default();
+
+        let action = Action::Message(MessageAction::EditMessage {
+            message_id,
+            old_content,
+            new_content: content,
+        });
+
+        if let Err(e) = self.dialogue.apply_action(action) {
+            self.error_message = Some(format!("Failed to edit message: {}", e));
+        }
+    }
+
+    pub fn append_message_content(&mut self, content: String) {
+        if let Some(branch_id) = self.current_branch_id {
+            let action = Action::Branch(BranchAction::AppendMessage {
+                branch_id,
+                message_content: content,
+            });
+
+            if let Err(e) = self.dialogue.apply_action(action) {
+                self.error_message = Some(format!("Failed to append message: {}", e));
+            } else {
+                // Focus on the new message
+                if let Some(branch) = self.current_branch() {
+                    if let Some(last_message) = branch.messages().iter().last() {
+                        self.focus_message(last_message.id());
+                    }
+                }
+            }
+        }
     }
 
     pub fn current_branch(&self) -> Option<&frond_core::Branch> {

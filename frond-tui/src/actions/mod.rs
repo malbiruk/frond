@@ -1,15 +1,58 @@
 use crate::app::Mode;
 use std::collections::HashMap;
-use uuid::Uuid;
+use strum::IntoEnumIterator;
 
 pub mod common;
 pub mod edit_mode;
 pub mod normal_mode;
 
-pub use common::{ActionInfo, CommonAction};
-pub use edit_mode::EditModeAction;
-pub use normal_mode::NormalModeAction;
+pub use common::{CommonAction, CommonActionSchema};
+pub use edit_mode::{CursorDirection, EditModeAction, EditModeActionSchema};
+pub use normal_mode::{NormalModeAction, NormalModeActionSchema};
 
+// Schema enums - parameter-less for registry
+#[derive(Debug, Clone)]
+pub enum ActionSchema {
+    Common(CommonActionSchema),
+    Normal(NormalModeActionSchema),
+    Edit(EditModeActionSchema),
+}
+
+impl ActionSchema {
+    pub fn id(&self) -> &'static str {
+        match self {
+            Self::Common(action) => action.id(),
+            Self::Normal(action) => action.id(),
+            Self::Edit(action) => action.id(),
+        }
+    }
+
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::Common(action) => action.name(),
+            Self::Normal(action) => action.name(),
+            Self::Edit(action) => action.name(),
+        }
+    }
+
+    pub fn description(&self) -> &'static str {
+        match self {
+            Self::Common(action) => action.description(),
+            Self::Normal(action) => action.description(),
+            Self::Edit(action) => action.description(),
+        }
+    }
+
+    pub fn requires_focus(&self) -> bool {
+        match self {
+            Self::Common(action) => action.requires_focus(),
+            Self::Normal(action) => action.requires_focus(),
+            Self::Edit(action) => action.requires_focus(),
+        }
+    }
+}
+
+// Action instances - with real parameters for dispatch
 #[derive(Debug, Clone)]
 pub enum UIAction {
     Common(CommonAction),
@@ -17,18 +60,8 @@ pub enum UIAction {
     EditMode(EditModeAction),
 }
 
-impl UIAction {
-    pub fn info(&self) -> ActionInfo {
-        match self {
-            UIAction::Common(action) => action.info(),
-            UIAction::NormalMode(action) => action.info(),
-            UIAction::EditMode(action) => action.info(),
-        }
-    }
-}
-
 pub struct ActionRegistry {
-    actions: HashMap<&'static str, UIAction>,
+    schemas: HashMap<&'static str, ActionSchema>,
 }
 
 impl Default for ActionRegistry {
@@ -39,63 +72,42 @@ impl Default for ActionRegistry {
 
 impl ActionRegistry {
     pub fn new() -> Self {
-        let mut actions = HashMap::new();
+        let mut schemas = HashMap::new();
 
-        // Register common actions
-        let common_actions = vec![
-            UIAction::Common(CommonAction::Quit),
-            UIAction::Common(CommonAction::ClearError),
-            UIAction::Common(CommonAction::ShowHelp(Mode::Normal)),
-        ];
-
-        // Register normal mode actions
-        let normal_actions = vec![
-            UIAction::NormalMode(NormalModeAction::ScrollUp),
-            UIAction::NormalMode(NormalModeAction::ScrollDown),
-            UIAction::NormalMode(NormalModeAction::EnterEditMode(Uuid::nil())),
-            UIAction::NormalMode(NormalModeAction::EnterAppendMode),
-            UIAction::NormalMode(NormalModeAction::EnterCommandPalette),
-            UIAction::NormalMode(NormalModeAction::DeleteMessage(Uuid::nil())),
-            UIAction::NormalMode(NormalModeAction::ForkBranch(Uuid::nil())),
-            UIAction::NormalMode(NormalModeAction::HideMessage(Uuid::nil())),
-            UIAction::NormalMode(NormalModeAction::NextBranch),
-            UIAction::NormalMode(NormalModeAction::PrevBranch),
-            UIAction::NormalMode(NormalModeAction::NextTree),
-            UIAction::NormalMode(NormalModeAction::PrevTree),
-        ];
-
-        // Register edit mode actions
-        let edit_actions = vec![UIAction::EditMode(EditModeAction::ExitCurrentMode)];
-
-        // Combine all actions
-        let all_actions = [common_actions, normal_actions, edit_actions].concat();
-
-        for action in all_actions {
-            let info = action.info();
-            actions.insert(info.id, action);
+        // Register all common action schemas
+        for schema in CommonActionSchema::iter() {
+            let action_schema = ActionSchema::Common(schema);
+            schemas.insert(action_schema.id(), action_schema);
         }
 
-        Self { actions }
+        // Register all normal mode action schemas
+        for schema in NormalModeActionSchema::iter() {
+            let action_schema = ActionSchema::Normal(schema);
+            schemas.insert(action_schema.id(), action_schema);
+        }
+
+        // Register all edit mode action schemas
+        for schema in EditModeActionSchema::iter() {
+            let action_schema = ActionSchema::Edit(schema);
+            schemas.insert(action_schema.id(), action_schema);
+        }
+
+        Self { schemas }
     }
 
-    pub fn get_action(&self, id: &str) -> Option<&UIAction> {
-        self.actions.get(id)
+    pub fn get_schema(&self, id: &str) -> Option<&ActionSchema> {
+        self.schemas.get(id)
     }
 
-    pub fn get_actions_for_mode(&self, mode: Mode) -> Vec<(&'static str, &UIAction)> {
-        self.actions
+    pub fn get_schemas_for_mode(&self, mode: Mode) -> Vec<(&'static str, &ActionSchema)> {
+        self.schemas
             .iter()
-            .filter(|(_, action)| {
-                let info = action.info();
-                info.available_in_modes
-                    .iter()
-                    .any(|m| mode_matches(mode, *m))
-            })
-            .map(|(id, action)| (*id, action))
+            .filter(|(_, schema)| schema_available_in_mode(schema, mode))
+            .map(|(id, schema)| (*id, schema))
             .collect()
     }
 
-    pub fn get_essential_actions_for_mode(&self, mode: Mode) -> Vec<(&'static str, &UIAction)> {
+    pub fn get_essential_schemas_for_mode(&self, mode: Mode) -> Vec<(&'static str, &ActionSchema)> {
         let essential_order = match mode {
             Mode::Normal => vec![
                 "append_message",
@@ -111,16 +123,9 @@ impl ActionRegistry {
         essential_order
             .into_iter()
             .filter_map(|action_id| {
-                let action = self.actions.get(action_id)?;
-                let info = action.info();
-
-                let available = info
-                    .available_in_modes
-                    .iter()
-                    .any(|m| mode_matches(mode, *m));
-
-                if available {
-                    Some((action_id, action))
+                let schema = self.schemas.get(action_id)?;
+                if schema_available_in_mode(schema, mode) {
+                    Some((action_id, schema))
                 } else {
                     None
                 }
@@ -129,11 +134,16 @@ impl ActionRegistry {
     }
 }
 
-fn mode_matches(current: Mode, available: Mode) -> bool {
-    matches!(
-        (current, available),
-        (Mode::Normal, Mode::Normal) | (Mode::Edit(_), Mode::Edit(_))
-    )
+fn schema_available_in_mode(schema: &ActionSchema, mode: Mode) -> bool {
+    match (schema, mode) {
+        // Common actions available in all modes
+        (ActionSchema::Common(_), _) => true,
+        // Normal mode actions only in normal mode
+        (ActionSchema::Normal(_), Mode::Normal) => true,
+        // Edit mode actions only in edit modes
+        (ActionSchema::Edit(_), Mode::Edit(_)) => true,
+        _ => false,
+    }
 }
 
 pub trait ActionDispatcher {

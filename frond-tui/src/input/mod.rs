@@ -1,4 +1,7 @@
-use crate::actions::{ActionRegistry, NormalModeAction, UIAction};
+use crate::actions::{
+    ActionRegistry, ActionSchema, CommonAction, CursorDirection, EditModeAction, NormalModeAction,
+    UIAction,
+};
 use crate::app::Mode;
 use crate::config::Config;
 use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
@@ -80,45 +83,124 @@ impl InputHandler {
         current_mode: Mode,
         focused_message: Option<Uuid>,
     ) -> Option<UIAction> {
-        let action_id = self.key_mapping.get_action_id(current_mode, key_event)?;
-        let mut action = self.action_registry.get_action(&action_id)?.clone();
+        // First try to get action from keybinding
+        if let Some(action_id) = self.key_mapping.get_action_id(current_mode, key_event) {
+            if let Some(schema) = self.action_registry.get_schema(&action_id) {
+                return self.schema_to_action(schema, focused_message, key_event);
+            }
+        }
 
-        action = self.resolve_context_dependent_action(action, focused_message);
+        // If no keybinding found, handle special cases for edit mode
+        if let Mode::Edit(_) = current_mode {
+            return self.handle_edit_mode_direct_input(key_event);
+        }
 
-        Some(action)
+        None
     }
 
-    fn resolve_context_dependent_action(
+    fn schema_to_action(
         &self,
-        action: UIAction,
+        schema: &ActionSchema,
         focused_message: Option<Uuid>,
-    ) -> UIAction {
-        match action {
-            UIAction::NormalMode(NormalModeAction::EnterEditMode(id)) if id == Uuid::nil() => {
-                UIAction::NormalMode(NormalModeAction::EnterEditMode(
-                    focused_message.unwrap_or(Uuid::nil()),
-                ))
+        key_event: KeyEvent,
+    ) -> Option<UIAction> {
+        match schema {
+            ActionSchema::Common(common_schema) => {
+                use crate::actions::CommonActionSchema;
+                let action = match common_schema {
+                    CommonActionSchema::Quit => CommonAction::Quit,
+                    CommonActionSchema::ClearError => CommonAction::ClearError,
+                    CommonActionSchema::ShowHelp => CommonAction::ShowHelp(Mode::Normal), // Default mode
+                    CommonActionSchema::ShowError => return None, // Can't create without error message
+                    CommonActionSchema::UpdateConfig => return None, // Can't create without config
+                };
+                Some(UIAction::Common(action))
             }
-            UIAction::NormalMode(NormalModeAction::DeleteMessage(id)) if id == Uuid::nil() => {
-                UIAction::NormalMode(NormalModeAction::DeleteMessage(
-                    focused_message.unwrap_or(Uuid::nil()),
-                ))
+            ActionSchema::Normal(normal_schema) => {
+                use crate::actions::NormalModeActionSchema;
+                let action = match normal_schema {
+                    NormalModeActionSchema::ScrollUp => NormalModeAction::ScrollUp,
+                    NormalModeActionSchema::ScrollDown => NormalModeAction::ScrollDown,
+                    NormalModeActionSchema::EnterAppendMode => NormalModeAction::EnterAppendMode,
+                    NormalModeActionSchema::EnterCommandPalette => {
+                        NormalModeAction::EnterCommandPalette
+                    }
+                    NormalModeActionSchema::NextBranch => NormalModeAction::NextBranch,
+                    NormalModeActionSchema::PrevBranch => NormalModeAction::PrevBranch,
+                    NormalModeActionSchema::NextTree => NormalModeAction::NextTree,
+                    NormalModeActionSchema::PrevTree => NormalModeAction::PrevTree,
+
+                    // Actions that require focused message
+                    NormalModeActionSchema::EnterEditMode => {
+                        let message_id = focused_message?;
+                        NormalModeAction::EnterEditMode(message_id)
+                    }
+                    NormalModeActionSchema::DeleteMessage => {
+                        let message_id = focused_message?;
+                        NormalModeAction::DeleteMessage(message_id)
+                    }
+                    NormalModeActionSchema::ForkBranch => {
+                        let message_id = focused_message?;
+                        NormalModeAction::ForkBranch(message_id)
+                    }
+                    NormalModeActionSchema::HideMessage => {
+                        let message_id = focused_message?;
+                        NormalModeAction::HideMessage(message_id)
+                    }
+                    NormalModeActionSchema::ShowMessage => {
+                        let message_id = focused_message?;
+                        NormalModeAction::ShowMessage(message_id)
+                    }
+                };
+                Some(UIAction::NormalMode(action))
             }
-            UIAction::NormalMode(NormalModeAction::ForkBranch(id)) if id == Uuid::nil() => {
-                UIAction::NormalMode(NormalModeAction::ForkBranch(
-                    focused_message.unwrap_or(Uuid::nil()),
-                ))
+            ActionSchema::Edit(edit_schema) => {
+                use crate::actions::EditModeActionSchema;
+                let action = match edit_schema {
+                    EditModeActionSchema::ExitCurrentMode => EditModeAction::ExitCurrentMode,
+                    EditModeActionSchema::DeleteChar => EditModeAction::DeleteChar,
+                    EditModeActionSchema::MoveCursorLeft => {
+                        EditModeAction::MoveCursor(CursorDirection::Left)
+                    }
+                    EditModeActionSchema::MoveCursorRight => {
+                        EditModeAction::MoveCursor(CursorDirection::Right)
+                    }
+                    EditModeActionSchema::MoveCursorUp => {
+                        EditModeAction::MoveCursor(CursorDirection::Up)
+                    }
+                    EditModeActionSchema::MoveCursorDown => {
+                        EditModeAction::MoveCursor(CursorDirection::Down)
+                    }
+                    EditModeActionSchema::SelectAll => EditModeAction::SelectAll,
+                    EditModeActionSchema::Cut => EditModeAction::Cut,
+                    EditModeActionSchema::Copy => EditModeAction::Copy,
+
+                    // Actions that need parameters from key event
+                    EditModeActionSchema::InsertChar => {
+                        if let KeyCode::Char(c) = key_event.code {
+                            EditModeAction::InsertChar(c)
+                        } else {
+                            return None;
+                        }
+                    }
+                    EditModeActionSchema::Paste => return None, // Needs clipboard content
+                };
+                Some(UIAction::EditMode(action))
             }
-            UIAction::NormalMode(NormalModeAction::HideMessage(id)) if id == Uuid::nil() => {
-                UIAction::NormalMode(NormalModeAction::HideMessage(
-                    focused_message.unwrap_or(Uuid::nil()),
-                ))
-            }
-            other => other,
         }
     }
 
-    pub fn get_essential_actions(&self, mode: Mode) -> Vec<(&'static str, &UIAction)> {
-        self.action_registry.get_essential_actions_for_mode(mode)
+    fn handle_edit_mode_direct_input(&self, key_event: KeyEvent) -> Option<UIAction> {
+        // Handle direct character input in edit mode (not bound to actions)
+        match key_event.code {
+            KeyCode::Char(c) if key_event.modifiers.is_empty() => {
+                Some(UIAction::EditMode(EditModeAction::InsertChar(c)))
+            }
+            _ => None,
+        }
+    }
+
+    pub fn get_essential_schemas(&self, mode: Mode) -> Vec<(&'static str, &ActionSchema)> {
+        self.action_registry.get_essential_schemas_for_mode(mode)
     }
 }

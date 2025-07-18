@@ -283,6 +283,7 @@ dependencies = [
  "color-eyre",
  "frond-core",
  "ratatui",
+ "strum",
  "uuid",
 ]
 

@@ -141,14 +141,14 @@ fn action_registry_filters_actions_by_mode() {
 }
 
 #[test]
-fn action_registry_provides_essential_actions() {
+fn action_registry_provides_essential_schemas() {
     let registry = ActionRegistry::new();
 
-    let normal_essentials = registry.get_essential_actions_for_mode(Mode::Normal);
+    let normal_essentials = registry.get_essential_schemas_for_mode(Mode::Normal);
     let edit_essentials =
-        registry.get_essential_actions_for_mode(Mode::Edit(frond::app::EditMode::Append));
+        registry.get_essential_schemas_for_mode(Mode::Edit(frond::app::EditMode::Append));
 
-    // Normal mode should have essential actions like append, edit, delete
+    // Normal mode should have essential schemas like append, edit, delete
     let normal_essential_ids: Vec<&str> = normal_essentials.iter().map(|(id, _)| *id).collect();
     assert!(normal_essential_ids.contains(&"append_message"));
     assert!(normal_essential_ids.contains(&"edit_message"));
