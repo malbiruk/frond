@@ -129,30 +129,23 @@ fn update_focus_and_scroll_state(
 
     app_state.scroll_offset = clamped_scroll_offset;
     app_state.focused_message_id = focused_message_id;
-    app_state.update_scrollbar_state(viewport_height, viewport_width);
+
+    // Update scrollbar state
+    let messages = app_state.current_messages();
+    let total_height = scrolling::calculate_total_content_height(&messages, viewport_width);
+    app_state.scrollbar_state = scrolling::update_scrollbar_state(
+        app_state.scrollbar_state,
+        app_state.scroll_offset,
+        viewport_height,
+        total_height,
+    );
 }
 
 fn calculate_message_height_for_rendering(
     message: &frond_core::Message,
     viewport_width: u16,
 ) -> usize {
-    let border_size = 2;
-    let padding = 2;
-    let content_width = viewport_width.saturating_sub(border_size + padding) as usize;
-    let line_count = calculate_wrapped_lines(message.content(), content_width);
-    line_count + border_size as usize
-}
-
-fn calculate_wrapped_lines(content: &str, content_width: usize) -> usize {
-    let mut line_count = 0;
-    for line in content.lines() {
-        if line.is_empty() {
-            line_count += 1;
-        } else {
-            line_count += line.len().div_ceil(content_width);
-        }
-    }
-    if line_count == 0 { 1 } else { line_count }
+    scrolling::calculate_message_display_height(message, viewport_width)
 }
 
 fn render_empty_message(frame: &mut Frame, area: Rect) {

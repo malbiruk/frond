@@ -1,7 +1,7 @@
 use crate::actions::{ActionDispatcher, UIAction};
 use crate::config::Config;
 use crate::ui::normal_mode::scrolling;
-use frond_core::{Action, BranchAction, Dialogue, MessageAction};
+use frond_core::Dialogue;
 use ratatui::widgets::ScrollbarState;
 use uuid::Uuid;
 
@@ -105,44 +105,6 @@ impl AppState {
         self.pending_focus_request = Some(FocusRequest::Message(message_id));
     }
 
-    pub fn edit_message_content(&mut self, message_id: Uuid, content: String) {
-        let old_content = self
-            .dialogue
-            .get_message_by_id(message_id)
-            .map(|m| m.content().to_string())
-            .unwrap_or_default();
-
-        let action = Action::Message(MessageAction::EditMessage {
-            message_id,
-            old_content,
-            new_content: content,
-        });
-
-        if let Err(e) = self.dialogue.apply_action(action) {
-            self.error_message = Some(format!("Failed to edit message: {}", e));
-        }
-    }
-
-    pub fn append_message_content(&mut self, content: String) {
-        if let Some(branch_id) = self.current_branch_id {
-            let action = Action::Branch(BranchAction::AppendMessage {
-                branch_id,
-                message_content: content,
-            });
-
-            if let Err(e) = self.dialogue.apply_action(action) {
-                self.error_message = Some(format!("Failed to append message: {}", e));
-            } else {
-                // Focus on the new message
-                if let Some(branch) = self.current_branch() {
-                    if let Some(last_message) = branch.messages().iter().last() {
-                        self.focus_message(last_message.id());
-                    }
-                }
-            }
-        }
-    }
-
     pub fn current_branch(&self) -> Option<&frond_core::Branch> {
         self.current_branch_id
             .and_then(|branch_id| self.dialogue.get_branch_by_id(branch_id))
@@ -168,29 +130,10 @@ impl AppState {
         );
     }
 
-    pub fn calculate_message_display_height(
-        &self,
-        message: &frond_core::Message,
-        viewport_width: u16,
-    ) -> usize {
-        scrolling::calculate_message_display_height(message, viewport_width)
-    }
+    // UI calculation methods moved to UI layer
+    // These are now in ui/normal_mode/scrolling.rs and called from render functions
 
-    pub fn get_total_content_height(&self, viewport_width: u16) -> usize {
-        let messages = self.current_messages();
-        scrolling::calculate_total_content_height(&messages, viewport_width)
-    }
-
-    pub fn update_scrollbar_state(&mut self, viewport_height: usize, viewport_width: u16) {
-        let total_height = self.get_total_content_height(viewport_width);
-        self.scrollbar_state = scrolling::update_scrollbar_state(
-            self.scrollbar_state,
-            self.scroll_offset,
-            viewport_height,
-            total_height,
-        );
-    }
-
+    // Simple query methods - these stay in AppState as they're just data access
     pub fn get_message_index(&self, message_id: Uuid) -> Option<usize> {
         self.current_branch()?.get_message_index_by_id(message_id)
     }

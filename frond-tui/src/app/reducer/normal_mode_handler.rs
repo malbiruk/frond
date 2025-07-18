@@ -1,10 +1,6 @@
 use crate::actions::NormalModeAction;
 use crate::app::state::{AppState, FocusRequest};
-
-use frond_core::Action;
-
-use frond_core::MessageAction;
-use frond_core::TreeAction;
+use crate::services::DialogueService;
 use uuid::Uuid;
 
 pub fn handle_normal_mode_action(state: &mut AppState, action: NormalModeAction) {
@@ -71,23 +67,18 @@ fn handle_enter_command_palette(state: &mut AppState) {
 
 fn handle_delete_message(state: &mut AppState, message_id: Uuid) {
     if let Some(branch_id) = state.current_branch_id {
-        if let Some(branch) = state.dialogue.get_branch_by_id(branch_id) {
-            if let Some(message_index) = branch.get_message_index_by_id(message_id) {
-                if let Some(message) = branch.get_message_by_id(message_id) {
-                    let core_action = Action::Message(MessageAction::DeleteMessage {
-                        message_id,
-                        branch_id,
-                        message_index,
-                        deleted_message: message.clone(),
-                    });
+        // Get message index before deletion for focus update
+        let message_index = state.get_message_index(message_id);
 
-                    if let Err(e) = state.dialogue.apply_action(core_action) {
-                        state.error_message = Some(format!("Failed to delete message: {}", e));
-                    } else {
-                        // Update focused message
-                        state.update_focused_message_after_deletion(message_index);
-                    }
+        match DialogueService::delete_message(&mut state.dialogue, message_id, branch_id) {
+            Ok(_) => {
+                // Update focused message after successful deletion
+                if let Some(index) = message_index {
+                    state.update_focused_message_after_deletion(index);
                 }
+            }
+            Err(e) => {
+                state.error_message = Some(e);
             }
         }
     }
@@ -98,33 +89,33 @@ fn handle_fork_branch(state: &mut AppState, message_id: Uuid) {
         if let Some(branch_id) = state.current_branch_id {
             let new_branch_name = format!("fork-{}", chrono::Utc::now().timestamp());
 
-            let core_action = Action::Tree(TreeAction::ForkBranch {
+            match DialogueService::fork_branch(
+                &mut state.dialogue,
                 tree_id,
                 branch_id,
-                from_message_id: message_id,
+                message_id,
                 new_branch_name,
-            });
-
-            if let Err(e) = state.dialogue.apply_action(core_action) {
-                state.error_message = Some(format!("Failed to fork branch: {}", e));
+            ) {
+                Ok(_) => {
+                    // Branch created successfully
+                }
+                Err(e) => {
+                    state.error_message = Some(e);
+                }
             }
         }
     }
 }
 
 fn handle_hide_message(state: &mut AppState, message_id: Uuid) {
-    let core_action = Action::Message(MessageAction::HideMessage { message_id });
-
-    if let Err(e) = state.dialogue.apply_action(core_action) {
-        state.error_message = Some(format!("Failed to hide message: {}", e));
+    if let Err(e) = DialogueService::hide_message(&mut state.dialogue, message_id) {
+        state.error_message = Some(e);
     }
 }
 
 fn handle_show_message(state: &mut AppState, message_id: Uuid) {
-    let core_action = Action::Message(MessageAction::ShowMessage { message_id });
-
-    if let Err(e) = state.dialogue.apply_action(core_action) {
-        state.error_message = Some(format!("Failed to show message: {}", e));
+    if let Err(e) = DialogueService::show_message(&mut state.dialogue, message_id) {
+        state.error_message = Some(e);
     }
 }
 
