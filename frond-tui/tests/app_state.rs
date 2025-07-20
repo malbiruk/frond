@@ -270,30 +270,6 @@ fn app_state_mode_transitions_preserve_navigation() {
 }
 
 #[test]
-fn app_state_scroll_for_edit_mode_does_not_panic() {
-    let dialogue = create_test_dialogue();
-    let mut state = create_app_state_with_dialogue(dialogue);
-
-    let message_id = state.focused_message_id.unwrap();
-
-    // Test different edit modes
-    state.mode = Mode::Edit(EditMode::Append);
-    state.scroll_for_edit_mode(); // Should not panic
-
-    state.mode = Mode::Edit(EditMode::EditInPlace {
-        message_id,
-        has_messages_below: true,
-    });
-    state.scroll_for_edit_mode(); // Should not panic
-
-    state.mode = Mode::Edit(EditMode::EditInPlace {
-        message_id,
-        has_messages_below: false,
-    });
-    state.scroll_for_edit_mode(); // Should not panic
-}
-
-#[test]
 fn app_state_handles_empty_dialogue() {
     let empty_dialogue = Dialogue::new("Empty");
     let mut state = AppState {
@@ -318,7 +294,6 @@ fn app_state_handles_empty_dialogue() {
     // Verify all navigation methods handle empty state gracefully
     state.update_focused_message_from_scroll(20, 76);
     state.reset_focus_for_new_branch();
-    state.scroll_for_edit_mode();
 }
 
 #[test]
@@ -389,7 +364,6 @@ fn app_state_all_helper_methods_handle_invalid_state() {
     state.update_focused_message_after_deletion(0);
     state.reset_focus_for_new_branch();
     state.reset_focus_for_new_tree();
-    state.scroll_for_edit_mode();
 }
 
 #[test]

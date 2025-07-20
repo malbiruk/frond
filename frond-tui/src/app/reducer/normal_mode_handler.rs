@@ -49,13 +49,11 @@ fn handle_enter_edit_mode(state: &mut AppState, message_id: Uuid) {
         message_id,
         has_messages_below,
     });
-    state.scroll_for_edit_mode();
 }
 
 fn handle_enter_append_mode(state: &mut AppState) {
     // Transition to append mode
     state.mode = crate::app::Mode::Edit(crate::app::EditMode::Append);
-    state.scroll_for_edit_mode();
 }
 
 fn handle_enter_command_palette(state: &mut AppState) {
@@ -67,12 +65,10 @@ fn handle_enter_command_palette(state: &mut AppState) {
 
 fn handle_delete_message(state: &mut AppState, message_id: Uuid) {
     if let Some(branch_id) = state.current_branch_id {
-        // Get message index before deletion for focus update
         let message_index = state.get_message_index(message_id);
 
         match DialogueService::delete_message(&mut state.dialogue, message_id, branch_id) {
             Ok(_) => {
-                // Update focused message after successful deletion
                 if let Some(index) = message_index {
                     state.update_focused_message_after_deletion(index);
                 }

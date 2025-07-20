@@ -130,10 +130,6 @@ impl AppState {
         );
     }
 
-    // UI calculation methods moved to UI layer
-    // These are now in ui/normal_mode/scrolling.rs and called from render functions
-
-    // Simple query methods - these stay in AppState as they're just data access
     pub fn get_message_index(&self, message_id: Uuid) -> Option<usize> {
         self.current_branch()?.get_message_index_by_id(message_id)
     }
@@ -145,25 +141,6 @@ impl AppState {
             }
         }
         false
-    }
-
-    pub fn scroll_for_edit_mode(&mut self) {
-        match self.mode {
-            Mode::Edit(EditMode::EditInPlace {
-                has_messages_below: true,
-                ..
-            }) => {
-                // TODO: Implement center edit area scrolling
-            }
-            Mode::Edit(EditMode::EditInPlace {
-                has_messages_below: false,
-                ..
-            })
-            | Mode::Edit(EditMode::Append) => {
-                // TODO: Implement bottom edit area scrolling
-            }
-            _ => {}
-        }
     }
 
     pub fn update_focused_message_after_deletion(&mut self, deleted_index: usize) {
