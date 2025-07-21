@@ -7,6 +7,12 @@ pub enum NormalModeActionSchema {
     // Navigation actions
     ScrollUp,
     ScrollDown,
+    ScrollHalfPageUp,
+    ScrollHalfPageDown,
+    ScrollPageUp,
+    ScrollPageDown,
+    ScrollToTop,
+    ScrollToBottom,
 
     // Mode transitions
     EnterEditMode,
@@ -31,6 +37,12 @@ impl NormalModeActionSchema {
         match self {
             Self::ScrollUp => "scroll_up",
             Self::ScrollDown => "scroll_down",
+            Self::ScrollHalfPageUp => "scroll_half_page_up",
+            Self::ScrollHalfPageDown => "scroll_half_page_down",
+            Self::ScrollPageUp => "scroll_page_up",
+            Self::ScrollPageDown => "scroll_page_down",
+            Self::ScrollToTop => "scroll_to_top",
+            Self::ScrollToBottom => "scroll_to_bottom",
             Self::EnterEditMode => "edit_message",
             Self::EnterAppendMode => "append_message",
             Self::EnterCommandPalette => "command_palette",
@@ -49,6 +61,12 @@ impl NormalModeActionSchema {
         match self {
             Self::ScrollUp => "scroll up",
             Self::ScrollDown => "scroll down",
+            Self::ScrollHalfPageUp => "scroll half page up",
+            Self::ScrollHalfPageDown => "scroll half page down",
+            Self::ScrollPageUp => "scroll page up",
+            Self::ScrollPageDown => "scroll page down",
+            Self::ScrollToTop => "scroll to top",
+            Self::ScrollToBottom => "scroll to bottom",
             Self::EnterEditMode => "edit",
             Self::EnterAppendMode => "append",
             Self::EnterCommandPalette => "command palette",
@@ -67,6 +85,12 @@ impl NormalModeActionSchema {
         match self {
             Self::ScrollUp => "scroll up one line",
             Self::ScrollDown => "scroll down one line",
+            Self::ScrollHalfPageUp => "scroll half page up",
+            Self::ScrollHalfPageDown => "scroll half page down",
+            Self::ScrollPageUp => "scroll page up",
+            Self::ScrollPageDown => "scroll page down",
+            Self::ScrollToTop => "scroll to top",
+            Self::ScrollToBottom => "scroll to bottom",
             Self::EnterEditMode => "edit the currently focused message",
             Self::EnterAppendMode => "add a new message to the conversation",
             Self::EnterCommandPalette => "open the command palette",
@@ -85,6 +109,12 @@ impl NormalModeActionSchema {
         match self {
             Self::ScrollUp
             | Self::ScrollDown
+            | Self::ScrollHalfPageUp
+            | Self::ScrollHalfPageDown
+            | Self::ScrollPageUp
+            | Self::ScrollPageDown
+            | Self::ScrollToTop
+            | Self::ScrollToBottom
             | Self::EnterAppendMode
             | Self::EnterCommandPalette
             | Self::NextBranch
@@ -106,6 +136,12 @@ pub enum NormalModeAction {
     // Navigation actions
     ScrollUp,
     ScrollDown,
+    ScrollHalfPageUp,
+    ScrollHalfPageDown,
+    ScrollPageUp,
+    ScrollPageDown,
+    ScrollToTop,
+    ScrollToBottom,
 
     // Mode transitions
     EnterEditMode(Uuid),

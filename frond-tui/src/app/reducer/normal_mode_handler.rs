@@ -1,5 +1,5 @@
 use crate::actions::NormalModeAction;
-use crate::app::state::{AppState, FocusRequest};
+use crate::app::state::{AppState, ScrollingRequest};
 use crate::services::DialogueService;
 use uuid::Uuid;
 
@@ -8,6 +8,12 @@ pub fn handle_normal_mode_action(state: &mut AppState, action: NormalModeAction)
         // Navigation actions
         NormalModeAction::ScrollUp => handle_scroll_up(state),
         NormalModeAction::ScrollDown => handle_scroll_down(state),
+        NormalModeAction::ScrollHalfPageUp => handle_scroll_half_page_up(state),
+        NormalModeAction::ScrollHalfPageDown => handle_scroll_half_page_down(state),
+        NormalModeAction::ScrollPageUp => handle_scroll_page_up(state),
+        NormalModeAction::ScrollPageDown => handle_scroll_page_down(state),
+        NormalModeAction::ScrollToTop => handle_scroll_to_top(state),
+        NormalModeAction::ScrollToBottom => handle_scroll_to_bottom(state),
 
         // Mode transitions
         NormalModeAction::EnterEditMode(message_id) => handle_enter_edit_mode(state, message_id),
@@ -37,6 +43,30 @@ fn handle_scroll_down(state: &mut AppState) {
     state.scroll_offset = state.scroll_offset.saturating_add(1);
 }
 
+fn handle_scroll_page_up(state: &mut AppState) {
+    state.pending_scrolling_request = Some(ScrollingRequest::ScrollPageUp);
+}
+
+fn handle_scroll_page_down(state: &mut AppState) {
+    state.pending_scrolling_request = Some(ScrollingRequest::ScrollPageDown);
+}
+
+fn handle_scroll_half_page_up(state: &mut AppState) {
+    state.pending_scrolling_request = Some(ScrollingRequest::ScrollHalfPageUp);
+}
+
+fn handle_scroll_half_page_down(state: &mut AppState) {
+    state.pending_scrolling_request = Some(ScrollingRequest::ScrollHalfPageDown);
+}
+
+fn handle_scroll_to_top(state: &mut AppState) {
+    state.pending_scrolling_request = Some(ScrollingRequest::ScrollToTop);
+}
+
+fn handle_scroll_to_bottom(state: &mut AppState) {
+    state.pending_scrolling_request = Some(ScrollingRequest::ScrollToBottom);
+}
+
 // Mode transition handlers
 fn handle_enter_edit_mode(state: &mut AppState, message_id: Uuid) {
     if message_id == Uuid::nil() {
@@ -62,7 +92,6 @@ fn handle_enter_command_palette(state: &mut AppState) {
 }
 
 // Message action handlers that bridge to frond-core
-
 fn handle_delete_message(state: &mut AppState, message_id: Uuid) {
     if let Some(branch_id) = state.current_branch_id {
         let message_index = state.get_message_index(message_id);
@@ -133,9 +162,10 @@ fn handle_next_branch(state: &mut AppState) {
                     state.reset_focus_for_new_branch();
 
                     // Request focus on same index, or last message if new branch is shorter
-                    state.pending_focus_request = Some(FocusRequest::SameIndexOrLast {
-                        previous_index: current_focused_index,
-                    });
+                    state.pending_scrolling_request =
+                        Some(ScrollingRequest::ScrollToMessageWithSameIndexOrLast {
+                            previous_index: current_focused_index,
+                        });
                 }
             }
         }
@@ -163,9 +193,10 @@ fn handle_prev_branch(state: &mut AppState) {
                     state.reset_focus_for_new_branch();
 
                     // Request focus on same index, or last message if new branch is shorter
-                    state.pending_focus_request = Some(FocusRequest::SameIndexOrLast {
-                        previous_index: current_focused_index,
-                    });
+                    state.pending_scrolling_request =
+                        Some(ScrollingRequest::ScrollToMessageWithSameIndexOrLast {
+                            previous_index: current_focused_index,
+                        });
                 }
             }
         }
@@ -182,7 +213,7 @@ fn handle_next_tree(state: &mut AppState) {
                 state.reset_focus_for_new_tree();
 
                 // Request focus on last message of new tree
-                state.pending_focus_request = Some(FocusRequest::LastMessage);
+                state.pending_scrolling_request = Some(ScrollingRequest::ScrollToLastMessage);
             }
         }
     }
@@ -202,7 +233,7 @@ fn handle_prev_tree(state: &mut AppState) {
                 state.reset_focus_for_new_tree();
 
                 // Request focus on last message of new tree
-                state.pending_focus_request = Some(FocusRequest::LastMessage);
+                state.pending_scrolling_request = Some(ScrollingRequest::ScrollToLastMessage);
             }
         }
     }

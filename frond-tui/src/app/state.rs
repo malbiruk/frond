@@ -6,10 +6,16 @@ use ratatui::widgets::ScrollbarState;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum FocusRequest {
-    Message(Uuid),
-    LastMessage,
-    SameIndexOrLast { previous_index: usize },
+pub enum ScrollingRequest {
+    ScrollToMessage(Uuid),
+    ScrollToLastMessage,
+    ScrollToMessageWithSameIndexOrLast { previous_index: usize },
+    ScrollToTop,
+    ScrollToBottom,
+    ScrollPageUp,
+    ScrollPageDown,
+    ScrollHalfPageUp,
+    ScrollHalfPageDown,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -42,8 +48,8 @@ pub struct AppState {
     pub scroll_offset: isize,
     pub scrollbar_state: ScrollbarState,
 
-    // Focus request (processed during render)
-    pub pending_focus_request: Option<FocusRequest>,
+    // Scrolling request (processed during render)
+    pub pending_scrolling_request: Option<ScrollingRequest>,
 
     // Error state
     pub error_message: Option<String>,
@@ -71,7 +77,7 @@ impl Default for AppState {
             focused_message_id: None,
             scroll_offset: 0,
             scrollbar_state: ScrollbarState::default(),
-            pending_focus_request: None,
+            pending_scrolling_request: None,
             error_message: None,
         };
 
@@ -80,7 +86,7 @@ impl Default for AppState {
             .current_branch()
             .is_some_and(|b| !b.messages().is_empty())
         {
-            state.pending_focus_request = Some(FocusRequest::LastMessage);
+            state.pending_scrolling_request = Some(ScrollingRequest::ScrollToLastMessage);
         }
 
         state
@@ -102,7 +108,7 @@ impl AppState {
     // Internal helper methods - not user actions
     pub fn focus_message(&mut self, message_id: Uuid) {
         // Request focus - will be resolved during render with real viewport
-        self.pending_focus_request = Some(FocusRequest::Message(message_id));
+        self.pending_scrolling_request = Some(ScrollingRequest::ScrollToMessage(message_id));
     }
 
     pub fn current_branch(&self) -> Option<&frond_core::Branch> {

@@ -22,6 +22,32 @@ impl Default for Keybindings {
         normal_bindings.insert("show_help".to_string(), parse_key_chord("?").unwrap());
         normal_bindings.insert("scroll_up".to_string(), parse_key_chord("up").unwrap());
         normal_bindings.insert("scroll_down".to_string(), parse_key_chord("down").unwrap());
+        normal_bindings.insert(
+            "scroll_half_page_up".to_string(),
+            parse_key_chord("ctrl-u").unwrap(),
+        );
+        normal_bindings.insert(
+            "scroll_half_page_down".to_string(),
+            parse_key_chord("ctrl-d").unwrap(),
+        );
+        normal_bindings.insert(
+            "scroll_page_up".to_string(),
+            parse_key_chord("pgup").unwrap(),
+        );
+        normal_bindings.insert(
+            "scroll_page_down".to_string(),
+            parse_key_chord("pgdn").unwrap(),
+        );
+        normal_bindings.insert(
+            "scroll_to_top".to_string(),
+            parse_key_chord("home").unwrap(),
+        );
+        normal_bindings.insert(
+            "scroll_to_bottom".to_string(),
+            parse_key_chord("end").unwrap(),
+        );
+        normal_bindings.insert("scroll_up".to_string(), parse_key_chord("up").unwrap());
+        normal_bindings.insert("scroll_down".to_string(), parse_key_chord("down").unwrap());
         normal_bindings.insert("prev_branch".to_string(), parse_key_chord("left").unwrap());
         normal_bindings.insert("next_branch".to_string(), parse_key_chord("right").unwrap());
         normal_bindings.insert(

@@ -1,7 +1,7 @@
 use super::scrolling;
 use crate::app::AppState;
+use crate::app::state;
 use ratatui::prelude::Alignment;
-use ratatui::style::Color;
 use ratatui::style::Style;
 use ratatui::widgets::{Block, Paragraph, Scrollbar, ScrollbarOrientation, Wrap};
 use ratatui::{Frame, layout::Rect};
@@ -30,20 +30,20 @@ fn resolve_pending_focus_request(
     viewport_height: usize,
     viewport_width: u16,
 ) {
-    if let Some(request) = app_state.pending_focus_request.take() {
+    if let Some(request) = app_state.pending_scrolling_request.take() {
         let messages = app_state.current_messages();
 
         let focus_result = match request {
-            crate::app::state::FocusRequest::Message(message_id) => resolve_focus_specific_message(
+            state::ScrollingRequest::ScrollToMessage(message_id) => resolve_focus_specific_message(
                 &messages,
                 message_id,
                 viewport_height,
                 viewport_width,
             ),
-            crate::app::state::FocusRequest::LastMessage => {
+            state::ScrollingRequest::ScrollToLastMessage => {
                 resolve_focus_last_message(&messages, viewport_height, viewport_width)
             }
-            crate::app::state::FocusRequest::SameIndexOrLast { previous_index } => {
+            state::ScrollingRequest::ScrollToMessageWithSameIndexOrLast { previous_index } => {
                 resolve_focus_same_index_or_last(
                     &messages,
                     previous_index,
@@ -51,6 +51,40 @@ fn resolve_pending_focus_request(
                     viewport_width,
                 )
             }
+            state::ScrollingRequest::ScrollToTop => {
+                resolve_focus_top(&messages, viewport_height, viewport_width)
+            }
+            state::ScrollingRequest::ScrollToBottom => {
+                resolve_focus_bottom(&messages, viewport_height, viewport_width)
+            }
+            state::ScrollingRequest::ScrollPageUp => resolve_focus_scroll_by(
+                &messages,
+                app_state.scroll_offset,
+                -(viewport_height as isize),
+                viewport_height,
+                viewport_width,
+            ),
+            state::ScrollingRequest::ScrollPageDown => resolve_focus_scroll_by(
+                &messages,
+                app_state.scroll_offset,
+                viewport_height as isize,
+                viewport_height,
+                viewport_width,
+            ),
+            state::ScrollingRequest::ScrollHalfPageUp => resolve_focus_scroll_by(
+                &messages,
+                app_state.scroll_offset,
+                -((viewport_height as f32 / 2.0).ceil() as isize),
+                viewport_height,
+                viewport_width,
+            ),
+            state::ScrollingRequest::ScrollHalfPageDown => resolve_focus_scroll_by(
+                &messages,
+                app_state.scroll_offset,
+                (viewport_height as f32 / 2.0).ceil() as isize,
+                viewport_height,
+                viewport_width,
+            ),
         };
 
         if let Some((message_id, scroll_offset)) = focus_result {
@@ -106,6 +140,53 @@ fn resolve_focus_same_index_or_last(
     }
 }
 
+fn resolve_focus_top(
+    messages: &[&frond_core::Message],
+    viewport_height: usize,
+    viewport_width: u16,
+) -> Option<(uuid::Uuid, isize)> {
+    messages.first().map(|msg| {
+        let scroll_offset = scrolling::calculate_scroll_to_focus_message(
+            messages,
+            msg.id(),
+            viewport_height as isize,
+            viewport_width,
+        )
+        .unwrap_or(0);
+        (msg.id(), scroll_offset)
+    })
+}
+
+fn resolve_focus_bottom(
+    messages: &[&frond_core::Message],
+    viewport_height: usize,
+    viewport_width: u16,
+) -> Option<(uuid::Uuid, isize)> {
+    resolve_focus_last_message(messages, viewport_height, viewport_width)
+}
+
+fn resolve_focus_scroll_by(
+    messages: &[&frond_core::Message],
+    current_scroll_offset: isize,
+    delta: isize,
+    viewport_height: usize,
+    viewport_width: u16,
+) -> Option<(uuid::Uuid, isize)> {
+    let total_content_height = scrolling::calculate_total_content_height(messages, viewport_width);
+    let new_scroll_offset = scrolling::clamp_scroll_offset(
+        current_scroll_offset + delta,
+        viewport_height,
+        total_content_height,
+    );
+    let focused_message_id = scrolling::update_focused_message_from_scroll(
+        messages,
+        new_scroll_offset,
+        viewport_height as isize,
+        viewport_width,
+    );
+    focused_message_id.map(|id| (id, new_scroll_offset))
+}
+
 fn update_focus_and_scroll_state(
     app_state: &mut AppState,
     viewport_height: usize,
@@ -149,14 +230,10 @@ fn calculate_message_height_for_rendering(
 }
 
 fn render_empty_message(frame: &mut Frame, area: Rect) {
-    let empty_msg = create_empty_message_widget();
-    frame.render_widget(empty_msg, area);
-}
-
-fn create_empty_message_widget() -> Paragraph<'static> {
-    Paragraph::new("No messages in this branch")
+    let empty_msg = Paragraph::new("No messages in this branch")
         .alignment(Alignment::Center)
-        .style(Style::default())
+        .style(Style::default());
+    frame.render_widget(empty_msg, area);
 }
 
 fn render_messages_with_scroll(
@@ -215,13 +292,11 @@ fn render_single_message(
     app_state: &AppState,
     y_offset: isize,
 ) {
-    let is_focused = app_state.focused_message_id == Some(message.id());
     let message_area =
         calculate_visible_message_area(content_area, y_offset, message, content_area.width);
 
     if message_area.height > 0 {
-        let message_widget =
-            create_message_widget(message, app_state, is_focused, y_offset, content_area);
+        let message_widget = create_message_widget(message, app_state, y_offset, content_area);
         frame.render_widget(message_widget, message_area);
     }
 }
@@ -257,26 +332,24 @@ fn is_below_viewport(y_offset: isize, content_area: Rect) -> bool {
 fn create_message_widget(
     message: &frond_core::Message,
     app_state: &AppState,
-    is_focused: bool,
     y_offset: isize,
     content_area: Rect,
 ) -> Paragraph<'static> {
+    let is_focused = app_state.focused_message_id == Some(message.id());
     let theme = get_message_theme(message, app_state);
-    let block = create_message_block(theme, is_focused);
+
+    let block = create_message_block(app_state, theme, is_focused);
     let scroll_offset = calculate_message_scroll_offset(y_offset, content_area);
 
-    create_paragraph_with_theme(message.content(), theme, block, scroll_offset)
-}
+    let text_color = if is_focused {
+        app_state.config.theme.focused.text_color
+    } else {
+        theme.text_color
+    };
 
-fn create_paragraph_with_theme(
-    content: &str,
-    theme: &crate::config::theme::MessageTheme,
-    block: Block<'static>,
-    scroll_offset: u16,
-) -> Paragraph<'static> {
-    Paragraph::new(content.to_string())
+    Paragraph::new(message.content().to_string())
         .block(block)
-        .style(Style::default().fg(theme.text_color))
+        .style(Style::default().fg(text_color))
         .wrap(Wrap { trim: false })
         .scroll((scroll_offset, 0))
 }
@@ -290,59 +363,48 @@ fn calculate_message_scroll_offset(y_offset: isize, content_area: Rect) -> u16 {
 }
 
 fn create_message_block(
+    app_state: &AppState,
     theme: &crate::config::theme::MessageTheme,
     is_focused: bool,
 ) -> Block<'static> {
-    let title = create_message_title(theme);
-    let base_block = create_base_block(title, theme);
-
-    apply_focus_styling(base_block, is_focused, theme)
-}
-
-fn create_message_title(theme: &crate::config::theme::MessageTheme) -> String {
-    format!(" {} ", theme.display_name)
-}
-
-fn create_base_block(title: String, theme: &crate::config::theme::MessageTheme) -> Block<'static> {
-    Block::bordered()
+    let title = format!(" {} ", theme.display_name);
+    let base_block = Block::bordered()
         .title(title)
         .title_alignment(Alignment::Left)
-        .title_style(Style::default().fg(theme.title_color))
+        .title_style(Style::default().fg(theme.title_color));
+
+    apply_focus_styling(app_state, base_block, theme, is_focused)
 }
 
 fn apply_focus_styling(
+    app_state: &AppState,
     block: Block<'static>,
-    is_focused: bool,
     theme: &crate::config::theme::MessageTheme,
+    is_focused: bool,
 ) -> Block<'static> {
     if is_focused {
+        let focused = &app_state.config.theme.focused;
         block
-            .border_type(ratatui::widgets::BorderType::Double)
-            .style(Style::default().fg(Color::White))
+            .border_type(focused.border_type)
+            .style(Style::default().fg(focused.frame_color))
     } else {
-        block.style(Style::default().fg(theme.frame_color))
+        block
+            .border_type(theme.border_type)
+            .style(Style::default().fg(theme.frame_color))
     }
 }
 
 fn render_scrollbar(frame: &mut Frame, area: Rect, app_state: &mut AppState) {
-    let scrollbar = create_scrollbar_widget();
-    let scrollbar_area = calculate_scrollbar_area(area);
-    frame.render_stateful_widget(scrollbar, scrollbar_area, &mut app_state.scrollbar_state);
-}
-
-fn create_scrollbar_widget() -> Scrollbar<'static> {
-    Scrollbar::new(ScrollbarOrientation::VerticalRight)
+    let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
         .begin_symbol(Some("↑"))
-        .end_symbol(Some("↓"))
-}
-
-fn calculate_scrollbar_area(area: Rect) -> Rect {
-    Rect {
+        .end_symbol(Some("↓"));
+    let scrollbar_area = Rect {
         x: area.x + area.width.saturating_sub(1),
         y: area.y,
         width: 1,
         height: area.height,
-    }
+    };
+    frame.render_stateful_widget(scrollbar, scrollbar_area, &mut app_state.scrollbar_state);
 }
 
 fn get_message_theme<'a>(

@@ -121,6 +121,14 @@ impl InputHandler {
                 let action = match normal_schema {
                     NormalModeActionSchema::ScrollUp => NormalModeAction::ScrollUp,
                     NormalModeActionSchema::ScrollDown => NormalModeAction::ScrollDown,
+                    NormalModeActionSchema::ScrollPageUp => NormalModeAction::ScrollPageUp,
+                    NormalModeActionSchema::ScrollPageDown => NormalModeAction::ScrollPageDown,
+                    NormalModeActionSchema::ScrollHalfPageUp => NormalModeAction::ScrollHalfPageUp,
+                    NormalModeActionSchema::ScrollHalfPageDown => {
+                        NormalModeAction::ScrollHalfPageDown
+                    }
+                    NormalModeActionSchema::ScrollToTop => NormalModeAction::ScrollToTop,
+                    NormalModeActionSchema::ScrollToBottom => NormalModeAction::ScrollToBottom,
                     NormalModeActionSchema::EnterAppendMode => NormalModeAction::EnterAppendMode,
                     NormalModeActionSchema::EnterCommandPalette => {
                         NormalModeAction::EnterCommandPalette

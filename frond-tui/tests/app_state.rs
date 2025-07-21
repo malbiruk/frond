@@ -59,7 +59,7 @@ fn create_app_state_with_dialogue(dialogue: Dialogue) -> AppState {
         focused_message_id: message_id,
         scroll_offset: 0,
         scrollbar_state: ratatui::widgets::ScrollbarState::default(),
-        pending_focus_request: None,
+        pending_scrolling_request: None,
         error_message: None,
     }
 }
@@ -74,7 +74,7 @@ fn app_state_default_creates_valid_state() {
     assert!(state.current_tree_id.is_some());
     assert!(state.current_branch_id.is_some());
     // Focus request should be pending (resolved during render)
-    assert!(state.pending_focus_request.is_some());
+    assert!(state.pending_scrolling_request.is_some());
 }
 
 #[test]
@@ -281,7 +281,7 @@ fn app_state_handles_empty_dialogue() {
         focused_message_id: None,
         scroll_offset: 0,
         scrollbar_state: ratatui::widgets::ScrollbarState::default(),
-        pending_focus_request: None,
+        pending_scrolling_request: None,
         error_message: None,
     };
 

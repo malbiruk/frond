@@ -73,7 +73,7 @@ fn create_app_state_with_dialogue(dialogue: Dialogue) -> AppState {
         focused_message_id: message_id,
         scroll_offset: 0,
         scrollbar_state: ratatui::widgets::ScrollbarState::default(),
-        pending_focus_request: None,
+        pending_scrolling_request: None,
         error_message: None,
     }
 }
@@ -500,7 +500,7 @@ fn operations_with_empty_dialogue_handle_gracefully() {
         focused_message_id: None,
         scroll_offset: 0,
         scrollbar_state: ratatui::widgets::ScrollbarState::default(),
-        pending_focus_request: None,
+        pending_scrolling_request: None,
         error_message: None,
     };
 

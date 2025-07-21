@@ -1,11 +1,9 @@
 use frond_core::{Action, BranchAction, Dialogue, MessageAction, TreeAction};
 use uuid::Uuid;
 
-/// Service layer for all business logic interactions with frond-core
 pub struct DialogueService;
 
 impl DialogueService {
-    /// Edit a message's content
     pub fn edit_message(
         dialogue: &mut Dialogue,
         message_id: Uuid,
@@ -27,7 +25,6 @@ impl DialogueService {
             .map_err(|e| format!("Failed to edit message: {}", e))
     }
 
-    /// Append a new message to a branch
     pub fn append_message(
         dialogue: &mut Dialogue,
         branch_id: Uuid,
@@ -43,13 +40,11 @@ impl DialogueService {
             .map_err(|e| format!("Failed to append message: {}", e))
     }
 
-    /// Delete a message from a branch
     pub fn delete_message(
         dialogue: &mut Dialogue,
         message_id: Uuid,
         branch_id: Uuid,
     ) -> Result<(), String> {
-        // Get message details before deletion - if anything fails, return a descriptive error
         let branch = dialogue
             .get_branch_by_id(branch_id)
             .ok_or_else(|| format!("Branch with id {} not found", branch_id))?;
@@ -75,7 +70,6 @@ impl DialogueService {
             .map_err(|e| format!("Failed to delete message: {}", e))
     }
 
-    /// Create a new branch by forking from a message
     pub fn fork_branch(
         dialogue: &mut Dialogue,
         tree_id: Uuid,
@@ -95,7 +89,6 @@ impl DialogueService {
             .map_err(|e| format!("Failed to fork branch: {}", e))
     }
 
-    /// Hide a message from LLM context
     pub fn hide_message(dialogue: &mut Dialogue, message_id: Uuid) -> Result<(), String> {
         let action = Action::Message(MessageAction::HideMessage { message_id });
         dialogue
@@ -103,7 +96,6 @@ impl DialogueService {
             .map_err(|e| format!("Failed to hide message: {}", e))
     }
 
-    /// Show a message in LLM context
     pub fn show_message(dialogue: &mut Dialogue, message_id: Uuid) -> Result<(), String> {
         let action = Action::Message(MessageAction::ShowMessage { message_id });
         dialogue
@@ -111,14 +103,12 @@ impl DialogueService {
             .map_err(|e| format!("Failed to show message: {}", e))
     }
 
-    /// Undo the last action
     pub fn undo(dialogue: &mut Dialogue) -> Result<(), String> {
         dialogue
             .undo_action()
             .map_err(|e| format!("Failed to undo: {}", e))
     }
 
-    /// Redo the last undone action
     pub fn redo(dialogue: &mut Dialogue) -> Result<(), String> {
         dialogue
             .redo_action()
