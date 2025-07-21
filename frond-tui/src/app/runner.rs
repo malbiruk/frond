@@ -2,6 +2,7 @@ use super::AppState;
 use crate::actions::{ActionDispatcher, CommonAction, UIAction};
 use crate::input::InputHandler;
 use color_eyre::eyre::Result;
+use ratatui::crossterm::event::KeyCode;
 use ratatui::{
     DefaultTerminal,
     crossterm::event::{self, Event},
@@ -28,6 +29,13 @@ impl App {
             terminal.draw(|frame| crate::ui::render(frame, &mut self.state))?;
 
             if let Event::Key(key_event) = event::read()? {
+                if self.state.error_message.is_some() {
+                    if key_event.code == KeyCode::Esc {
+                        self.state.error_message = None;
+                    }
+                    continue;
+                }
+
                 if let Some(action) = self.input_handler.handle_input(
                     key_event,
                     self.state.mode,

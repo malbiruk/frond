@@ -44,11 +44,9 @@ pub struct AppState {
     pub current_branch_id: Option<Uuid>,
     pub focused_message_id: Option<Uuid>,
 
-    // Scrolling state
+    // Scrolling
     pub scroll_offset: isize,
     pub scrollbar_state: ScrollbarState,
-
-    // Scrolling request (processed during render)
     pub pending_scrolling_request: Option<ScrollingRequest>,
 
     // Error state

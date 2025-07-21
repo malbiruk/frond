@@ -2,11 +2,11 @@ use crate::app::AppState;
 use ratatui::Frame;
 
 use super::layout::AppLayout;
+use super::status;
 
 mod breadcrumb;
 mod content;
 pub mod scrolling;
-mod status;
 
 pub fn render(frame: &mut Frame, app_state: &mut AppState) {
     let layout = AppLayout::new(frame.area(), app_state.mode);

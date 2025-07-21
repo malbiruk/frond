@@ -1,5 +1,4 @@
 ### closest goals
-- [ ] add error messages displaying
 - [ ] implement hiding messages
 - [ ] add undo/redo
 - [ ] add Normal "submodes": Normal > Message/Branch/Tree/Dialogue

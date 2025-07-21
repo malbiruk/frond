@@ -1,4 +1,5 @@
 use crate::app::AppState;
+use crate::input::InputHandler;
 use ratatui::prelude::Alignment;
 use ratatui::style::Style;
 use ratatui::text::Line;
@@ -21,6 +22,9 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app_state: &AppState) {
 }
 
 fn build_mode_text(app_state: &AppState) -> String {
+    if app_state.error_message.is_some() {
+        return format!("Mode: {:?} > Error", app_state.mode);
+    }
     format!("Mode: {:?}", app_state.mode)
 }
 
@@ -57,12 +61,24 @@ fn create_help_area(area: Rect) -> Rect {
 }
 
 fn create_help_line(app_state: &AppState) -> Line<'static> {
-    use crate::input::InputHandler;
+    if app_state.error_message.is_some() {
+        return create_error_help_line(app_state);
+    }
 
     let input_handler = InputHandler::new(&app_state.config);
     let available_schemas = input_handler.get_essential_schemas(app_state.mode);
     let action_spans = build_action_spans(app_state, &available_schemas);
     Line::from(action_spans)
+}
+
+fn create_error_help_line(app_state: &AppState) -> Line<'static> {
+    Line::from(vec![
+        Span::styled(
+            "esc",
+            Style::default().fg(app_state.config.theme.help_key_color),
+        ),
+        Span::raw(": dismiss"),
+    ])
 }
 
 fn build_action_spans(
