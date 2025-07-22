@@ -273,24 +273,6 @@ fn branch_navigation_resets_focus_and_scroll() {
     }
 }
 
-// Content Operation Tests
-// === Message Operations ===
-
-// TODO: Fix these tests to use correct action variants
-// Currently disabled due to action system refactoring
-
-// #[test]
-// fn append_message_adds_to_current_branch() {
-//     // This test needs to be updated to use the new action system
-//     // where append is handled through the service layer
-// }
-
-// #[test]
-// fn append_message_updates_focus_to_new_message() {
-//     // This test needs to be updated to use the new action system
-//     // where append is handled through the service layer
-// }
-
 #[test]
 fn delete_message_removes_from_branch() {
     let dialogue = create_test_dialogue_with_multiple_branches();
@@ -330,13 +312,6 @@ fn delete_message_updates_focus_correctly() {
         assert!(messages.iter().any(|m| m.id() == focused_id));
     }
 }
-
-// TODO: Fix this test to use correct action variants
-// #[test]
-// fn edit_message_updates_content_successfully() {
-//     // This test needs to be updated to use the new action system
-//     // where editing is handled through the service layer
-// }
 
 #[test]
 fn fork_branch_creates_new_branch() {
@@ -381,49 +356,6 @@ fn show_message_updates_visibility() {
 
     // Should complete without error (visibility is internal to frond-core)
     assert!(state.error_message.is_none());
-}
-
-// Error Handling Tests
-
-#[test]
-fn show_error_sets_error_message() {
-    let dialogue = create_test_dialogue_with_multiple_branches();
-    let mut state = create_app_state_with_dialogue(dialogue);
-
-    let error_msg = "Test error message".to_string();
-    let action = UIAction::Common(CommonAction::ShowError(error_msg.clone()));
-
-    reducer::reduce(&mut state, action);
-
-    assert_eq!(state.error_message, Some(error_msg));
-}
-
-#[test]
-fn clear_error_removes_error_message() {
-    let dialogue = create_test_dialogue_with_multiple_branches();
-    let mut state = create_app_state_with_dialogue(dialogue);
-
-    state.error_message = Some("Existing error".to_string());
-    let action = UIAction::Common(CommonAction::ClearError);
-
-    reducer::reduce(&mut state, action);
-
-    assert!(state.error_message.is_none());
-}
-
-#[test]
-fn update_config_changes_state_config() {
-    let dialogue = create_test_dialogue_with_multiple_branches();
-    let mut state = create_app_state_with_dialogue(dialogue);
-
-    let mut new_config = Config::default();
-    new_config.model_info.model = "test-model".to_string();
-
-    let action = UIAction::Common(CommonAction::UpdateConfig(new_config.clone()));
-
-    reducer::reduce(&mut state, action);
-
-    assert_eq!(state.config.model_info.model, "test-model");
 }
 
 // Scroll Action Tests
@@ -547,8 +479,6 @@ fn reducer_handles_all_action_types_without_panic() {
     let actions = vec![
         // Common actions
         UIAction::Common(CommonAction::Quit),
-        UIAction::Common(CommonAction::ShowError("test".to_string())),
-        UIAction::Common(CommonAction::ClearError),
         UIAction::Common(CommonAction::ShowHelp(Mode::Normal)),
         // Normal mode actions
         UIAction::NormalMode(NormalModeAction::ScrollUp),

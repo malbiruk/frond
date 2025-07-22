@@ -99,20 +99,6 @@ fn edit_mode_keys_dont_work_in_normal_mode() {
     assert!(edit_action.is_some(), "Escape should work in edit mode");
 }
 
-#[test]
-fn common_actions_work_in_all_modes() {
-    let config = Config::default();
-    let handler = InputHandler::new(&config);
-
-    let quit_key = KeyEvent::new(KeyCode::Char('q'), KeyModifiers::NONE);
-
-    let normal_action = handler.handle_input(quit_key, Mode::Normal, None);
-    let edit_action = handler.handle_input(quit_key, Mode::Edit(EditMode::Append), None);
-
-    assert!(normal_action.is_some(), "Quit should work in normal mode");
-    assert!(edit_action.is_some(), "Quit should work in edit mode");
-}
-
 // === Context Sensitivity ===
 
 #[test]

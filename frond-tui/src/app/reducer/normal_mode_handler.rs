@@ -1,5 +1,6 @@
 use crate::actions::NormalModeAction;
 use crate::app::state::{AppState, ScrollingRequest};
+use crate::app::{EditMode, Mode};
 use crate::services::DialogueService;
 use uuid::Uuid;
 
@@ -14,6 +15,12 @@ pub fn handle_normal_mode_action(state: &mut AppState, action: NormalModeAction)
         NormalModeAction::ScrollPageDown => handle_scroll_page_down(state),
         NormalModeAction::ScrollToTop => handle_scroll_to_top(state),
         NormalModeAction::ScrollToBottom => handle_scroll_to_bottom(state),
+        NormalModeAction::ScrollToNextMessage(message_id) => {
+            handle_scroll_to_next_message(state, message_id)
+        }
+        NormalModeAction::ScrollToPreviousMessage(message_id) => {
+            handle_scroll_to_previous_message(state, message_id)
+        }
 
         // Mode transitions
         NormalModeAction::EnterEditMode(message_id) => handle_enter_edit_mode(state, message_id),
@@ -67,6 +74,40 @@ fn handle_scroll_to_bottom(state: &mut AppState) {
     state.pending_scrolling_request = Some(ScrollingRequest::ScrollToBottom);
 }
 
+fn handle_scroll_to_adjacent_message<F>(
+    state: &mut AppState,
+    message_id: Uuid,
+    get_adjacent_index: F,
+) where
+    F: Fn(usize, usize) -> Option<usize>,
+{
+    let messages = state.current_messages();
+    if let Some(current_index) = messages.iter().position(|m| m.id() == message_id) {
+        if let Some(adjacent_index) = get_adjacent_index(current_index, messages.len()) {
+            if let Some(adjacent_message) = messages.get(adjacent_index) {
+                state.pending_scrolling_request =
+                    Some(ScrollingRequest::ScrollToMessage(adjacent_message.id()));
+            }
+        }
+    }
+}
+
+fn handle_scroll_to_next_message(state: &mut AppState, message_id: Uuid) {
+    handle_scroll_to_adjacent_message(state, message_id, |current, len| {
+        if current + 1 < len {
+            Some(current + 1)
+        } else {
+            None
+        }
+    });
+}
+
+fn handle_scroll_to_previous_message(state: &mut AppState, message_id: Uuid) {
+    handle_scroll_to_adjacent_message(state, message_id, |current, _len| {
+        if current > 0 { Some(current - 1) } else { None }
+    });
+}
+
 // Mode transition handlers
 fn handle_enter_edit_mode(state: &mut AppState, message_id: Uuid) {
     if message_id == Uuid::nil() {
@@ -75,15 +116,14 @@ fn handle_enter_edit_mode(state: &mut AppState, message_id: Uuid) {
     }
 
     let has_messages_below = state.has_messages_after(message_id);
-    state.mode = crate::app::Mode::Edit(crate::app::EditMode::EditInPlace {
+    state.mode = Mode::Edit(EditMode::EditInPlace {
         message_id,
         has_messages_below,
     });
 }
 
 fn handle_enter_append_mode(state: &mut AppState) {
-    // Transition to append mode
-    state.mode = crate::app::Mode::Edit(crate::app::EditMode::Append);
+    state.mode = Mode::Edit(EditMode::Append);
 }
 
 fn handle_enter_command_palette(state: &mut AppState) {

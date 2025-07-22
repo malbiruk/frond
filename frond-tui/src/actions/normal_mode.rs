@@ -13,6 +13,8 @@ pub enum NormalModeActionSchema {
     ScrollPageDown,
     ScrollToTop,
     ScrollToBottom,
+    ScrollToPreviousMessage,
+    ScrollToNextMessage,
 
     // Mode transitions
     EnterEditMode,
@@ -43,6 +45,8 @@ impl NormalModeActionSchema {
             Self::ScrollPageDown => "scroll_page_down",
             Self::ScrollToTop => "scroll_to_top",
             Self::ScrollToBottom => "scroll_to_bottom",
+            Self::ScrollToPreviousMessage => "scroll_to_previous_message",
+            Self::ScrollToNextMessage => "scroll_to_next_message",
             Self::EnterEditMode => "edit_message",
             Self::EnterAppendMode => "append_message",
             Self::EnterCommandPalette => "command_palette",
@@ -59,14 +63,16 @@ impl NormalModeActionSchema {
 
     pub fn name(&self) -> &'static str {
         match self {
-            Self::ScrollUp => "scroll up",
-            Self::ScrollDown => "scroll down",
-            Self::ScrollHalfPageUp => "scroll half page up",
-            Self::ScrollHalfPageDown => "scroll half page down",
-            Self::ScrollPageUp => "scroll page up",
-            Self::ScrollPageDown => "scroll page down",
-            Self::ScrollToTop => "scroll to top",
-            Self::ScrollToBottom => "scroll to bottom",
+            Self::ScrollUp => "up",
+            Self::ScrollDown => "down",
+            Self::ScrollHalfPageUp => "half page up",
+            Self::ScrollHalfPageDown => "half page down",
+            Self::ScrollPageUp => "page up",
+            Self::ScrollPageDown => "page down",
+            Self::ScrollToTop => "top",
+            Self::ScrollToBottom => "bottom",
+            Self::ScrollToPreviousMessage => "previous message",
+            Self::ScrollToNextMessage => "next message",
             Self::EnterEditMode => "edit",
             Self::EnterAppendMode => "append",
             Self::EnterCommandPalette => "command palette",
@@ -91,6 +97,8 @@ impl NormalModeActionSchema {
             Self::ScrollPageDown => "scroll page down",
             Self::ScrollToTop => "scroll to top",
             Self::ScrollToBottom => "scroll to bottom",
+            Self::ScrollToPreviousMessage => "scroll to previous message",
+            Self::ScrollToNextMessage => "scroll to next message",
             Self::EnterEditMode => "edit the currently focused message",
             Self::EnterAppendMode => "add a new message to the conversation",
             Self::EnterCommandPalette => "open the command palette",
@@ -125,7 +133,9 @@ impl NormalModeActionSchema {
             | Self::DeleteMessage
             | Self::ForkBranch
             | Self::HideMessage
-            | Self::ShowMessage => true,
+            | Self::ShowMessage
+            | Self::ScrollToPreviousMessage
+            | Self::ScrollToNextMessage => true,
         }
     }
 }
@@ -142,6 +152,8 @@ pub enum NormalModeAction {
     ScrollPageDown,
     ScrollToTop,
     ScrollToBottom,
+    ScrollToPreviousMessage(Uuid),
+    ScrollToNextMessage(Uuid),
 
     // Mode transitions
     EnterEditMode(Uuid),

@@ -1,6 +1,5 @@
 use crate::actions::{
-    ActionRegistry, ActionSchema, CommonAction, CursorDirection, EditModeAction, NormalModeAction,
-    UIAction,
+    ActionRegistry, ActionSchema, CommonAction, EditModeAction, NormalModeAction, UIAction,
 };
 use crate::app::Mode;
 use crate::config::Config;
@@ -86,13 +85,8 @@ impl InputHandler {
         // First try to get action from keybinding
         if let Some(action_id) = self.key_mapping.get_action_id(current_mode, key_event) {
             if let Some(schema) = self.action_registry.get_schema(&action_id) {
-                return self.schema_to_action(schema, focused_message, key_event);
+                return self.schema_to_action(schema, focused_message, &current_mode);
             }
-        }
-
-        // If no keybinding found, handle special cases for edit mode
-        if let Mode::Edit(_) = current_mode {
-            return self.handle_edit_mode_direct_input(key_event);
         }
 
         None
@@ -102,17 +96,14 @@ impl InputHandler {
         &self,
         schema: &ActionSchema,
         focused_message: Option<Uuid>,
-        key_event: KeyEvent,
+        current_mode: &Mode,
     ) -> Option<UIAction> {
         match schema {
             ActionSchema::Common(common_schema) => {
                 use crate::actions::CommonActionSchema;
                 let action = match common_schema {
                     CommonActionSchema::Quit => CommonAction::Quit,
-                    CommonActionSchema::ClearError => CommonAction::ClearError,
-                    CommonActionSchema::ShowHelp => CommonAction::ShowHelp(Mode::Normal), // Default mode
-                    CommonActionSchema::ShowError => return None, // Can't create without error message
-                    CommonActionSchema::UpdateConfig => return None, // Can't create without config
+                    CommonActionSchema::ShowHelp => CommonAction::ShowHelp(*current_mode),
                 };
                 Some(UIAction::Common(action))
             }
@@ -140,24 +131,25 @@ impl InputHandler {
 
                     // Actions that require focused message
                     NormalModeActionSchema::EnterEditMode => {
-                        let message_id = focused_message?;
-                        NormalModeAction::EnterEditMode(message_id)
+                        NormalModeAction::EnterEditMode(focused_message?)
                     }
                     NormalModeActionSchema::DeleteMessage => {
-                        let message_id = focused_message?;
-                        NormalModeAction::DeleteMessage(message_id)
+                        NormalModeAction::DeleteMessage(focused_message?)
                     }
                     NormalModeActionSchema::ForkBranch => {
-                        let message_id = focused_message?;
-                        NormalModeAction::ForkBranch(message_id)
+                        NormalModeAction::ForkBranch(focused_message?)
                     }
                     NormalModeActionSchema::HideMessage => {
-                        let message_id = focused_message?;
-                        NormalModeAction::HideMessage(message_id)
+                        NormalModeAction::HideMessage(focused_message?)
                     }
                     NormalModeActionSchema::ShowMessage => {
-                        let message_id = focused_message?;
-                        NormalModeAction::ShowMessage(message_id)
+                        NormalModeAction::ShowMessage(focused_message?)
+                    }
+                    NormalModeActionSchema::ScrollToPreviousMessage => {
+                        NormalModeAction::ScrollToPreviousMessage(focused_message?)
+                    }
+                    NormalModeActionSchema::ScrollToNextMessage => {
+                        NormalModeAction::ScrollToNextMessage(focused_message?)
                     }
                 };
                 Some(UIAction::NormalMode(action))
@@ -166,45 +158,9 @@ impl InputHandler {
                 use crate::actions::EditModeActionSchema;
                 let action = match edit_schema {
                     EditModeActionSchema::ExitCurrentMode => EditModeAction::ExitCurrentMode,
-                    EditModeActionSchema::DeleteChar => EditModeAction::DeleteChar,
-                    EditModeActionSchema::MoveCursorLeft => {
-                        EditModeAction::MoveCursor(CursorDirection::Left)
-                    }
-                    EditModeActionSchema::MoveCursorRight => {
-                        EditModeAction::MoveCursor(CursorDirection::Right)
-                    }
-                    EditModeActionSchema::MoveCursorUp => {
-                        EditModeAction::MoveCursor(CursorDirection::Up)
-                    }
-                    EditModeActionSchema::MoveCursorDown => {
-                        EditModeAction::MoveCursor(CursorDirection::Down)
-                    }
-                    EditModeActionSchema::SelectAll => EditModeAction::SelectAll,
-                    EditModeActionSchema::Cut => EditModeAction::Cut,
-                    EditModeActionSchema::Copy => EditModeAction::Copy,
-
-                    // Actions that need parameters from key event
-                    EditModeActionSchema::InsertChar => {
-                        if let KeyCode::Char(c) = key_event.code {
-                            EditModeAction::InsertChar(c)
-                        } else {
-                            return None;
-                        }
-                    }
-                    EditModeActionSchema::Paste => return None, // Needs clipboard content
                 };
                 Some(UIAction::EditMode(action))
             }
-        }
-    }
-
-    fn handle_edit_mode_direct_input(&self, key_event: KeyEvent) -> Option<UIAction> {
-        // Handle direct character input in edit mode (not bound to actions)
-        match key_event.code {
-            KeyCode::Char(c) if key_event.modifiers.is_empty() => {
-                Some(UIAction::EditMode(EditModeAction::InsertChar(c)))
-            }
-            _ => None,
         }
     }
 

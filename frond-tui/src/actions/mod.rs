@@ -7,7 +7,7 @@ pub mod edit_mode;
 pub mod normal_mode;
 
 pub use common::{CommonAction, CommonActionSchema};
-pub use edit_mode::{CursorDirection, EditModeAction, EditModeActionSchema};
+pub use edit_mode::{EditModeAction, EditModeActionSchema};
 pub use normal_mode::{NormalModeAction, NormalModeActionSchema};
 
 // Schema enums - parameter-less for registry

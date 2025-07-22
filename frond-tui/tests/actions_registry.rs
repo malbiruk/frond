@@ -22,7 +22,7 @@ fn action_registry_creates_successfully() {
 fn schemas_have_correct_metadata() {
     let scroll_up = NormalModeActionSchema::ScrollUp;
     assert_eq!(scroll_up.id(), "scroll_up");
-    assert_eq!(scroll_up.name(), "scroll up");
+    assert_eq!(scroll_up.name(), "up");
     assert_eq!(scroll_up.description(), "scroll up one line");
     assert!(!scroll_up.requires_focus());
 

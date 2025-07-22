@@ -23,23 +23,8 @@ fn handle_common_action(state: &mut AppState, action: CommonAction) {
         CommonAction::Quit => {
             // Handle quit - this should be handled at the app level
         }
-        CommonAction::ShowError(message) => handle_show_error(state, message),
-        CommonAction::ClearError => handle_clear_error(state),
-        CommonAction::UpdateConfig(config) => handle_update_config(state, config),
         CommonAction::ShowHelp(mode) => handle_show_help(state, mode),
     }
-}
-
-fn handle_update_config(state: &mut AppState, config: crate::config::Config) {
-    state.config = config;
-}
-
-fn handle_show_error(state: &mut AppState, message: String) {
-    state.error_message = Some(message);
-}
-
-fn handle_clear_error(state: &mut AppState) {
-    state.error_message = None;
 }
 
 fn handle_show_help(state: &mut AppState, _mode: Mode) {
