@@ -33,11 +33,18 @@ pub enum EditMode {
     Append,
 }
 
+#[derive(Debug, Default)]
+pub struct ModelInfo {
+    pub tokens_used: u32,
+    pub tokens_available: u32,
+}
+
 #[derive(Debug)]
 pub struct AppState {
     pub dialogue: Dialogue,
     pub mode: Mode,
     pub config: Config,
+    pub model_info: ModelInfo,
 
     // Navigation state
     pub current_tree_id: Option<Uuid>,
@@ -70,6 +77,7 @@ impl Default for AppState {
             dialogue,
             mode: Mode::Normal,
             config: Config::default(),
+            model_info: ModelInfo::default(),
             current_tree_id: tree_id,
             current_branch_id: branch_id,
             focused_message_id: None,

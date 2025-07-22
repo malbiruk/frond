@@ -1,6 +1,5 @@
 use crate::actions::NormalModeAction;
 use crate::app::state::{AppState, ScrollingRequest};
-use crate::app::{EditMode, Mode};
 use crate::services::DialogueService;
 use uuid::Uuid;
 
@@ -116,14 +115,15 @@ fn handle_enter_edit_mode(state: &mut AppState, message_id: Uuid) {
     }
 
     let has_messages_below = state.has_messages_after(message_id);
-    state.mode = Mode::Edit(EditMode::EditInPlace {
+    state.mode = crate::app::Mode::Edit(crate::app::EditMode::EditInPlace {
         message_id,
         has_messages_below,
     });
 }
 
 fn handle_enter_append_mode(state: &mut AppState) {
-    state.mode = Mode::Edit(EditMode::Append);
+    // Transition to append mode
+    state.mode = crate::app::Mode::Edit(crate::app::EditMode::Append);
 }
 
 fn handle_enter_command_palette(state: &mut AppState) {

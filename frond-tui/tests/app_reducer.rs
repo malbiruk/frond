@@ -5,6 +5,7 @@
 //! content operations, and error handling.
 
 use frond::actions::{CommonAction, EditModeAction, NormalModeAction, UIAction};
+use frond::app::state::ModelInfo;
 use frond::app::{AppState, EditMode, Mode, reducer};
 use frond::config::Config;
 use frond_core::{Branch, Dialogue, Message, Role, Tree};
@@ -68,6 +69,7 @@ fn create_app_state_with_dialogue(dialogue: Dialogue) -> AppState {
         dialogue,
         mode: Mode::Normal,
         config: Config::default(),
+        model_info: ModelInfo::default(),
         current_tree_id: tree_id,
         current_branch_id: branch_id,
         focused_message_id: message_id,
@@ -427,6 +429,7 @@ fn operations_with_empty_dialogue_handle_gracefully() {
         dialogue: empty_dialogue,
         mode: Mode::Normal,
         config: Config::default(),
+        model_info: ModelInfo::default(),
         current_tree_id: None,
         current_branch_id: None,
         focused_message_id: None,

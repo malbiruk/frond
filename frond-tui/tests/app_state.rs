@@ -3,6 +3,7 @@
 //! This module tests the AppState struct and its helper methods for navigation,
 //! focus management, and state consistency.
 
+use frond::app::state::ModelInfo;
 use frond::app::{AppState, EditMode, Mode};
 use frond::config::Config;
 use frond_core::{Branch, Dialogue, Message, Role, Tree};
@@ -54,6 +55,7 @@ fn create_app_state_with_dialogue(dialogue: Dialogue) -> AppState {
         dialogue,
         mode: Mode::Normal,
         config: Config::default(),
+        model_info: ModelInfo::default(),
         current_tree_id: tree_id,
         current_branch_id: branch_id,
         focused_message_id: message_id,
@@ -276,6 +278,7 @@ fn app_state_handles_empty_dialogue() {
         dialogue: empty_dialogue,
         mode: Mode::Normal,
         config: Config::default(),
+        model_info: ModelInfo::default(),
         current_tree_id: None,
         current_branch_id: None,
         focused_message_id: None,

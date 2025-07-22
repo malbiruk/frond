@@ -1,3 +1,4 @@
+use super::edit_mode;
 use super::error::measure_popup;
 use super::normal_mode;
 use crate::app::AppState;
@@ -8,7 +9,7 @@ use ratatui::Frame;
 pub fn render(frame: &mut Frame, app_state: &mut AppState) {
     match app_state.mode {
         Mode::Normal => normal_mode::render(frame, app_state),
-        Mode::Edit(_) => todo!(),
+        Mode::Edit(_) => edit_mode::render(frame, app_state),
     }
 
     if let Some(ref msg) = app_state.error_message {

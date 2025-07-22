@@ -1,3 +1,4 @@
+pub mod edit_mode;
 pub mod error;
 pub mod layout;
 pub mod normal_mode;

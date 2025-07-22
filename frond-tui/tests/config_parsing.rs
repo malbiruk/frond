@@ -360,8 +360,8 @@ fn config_default_creates_valid_configuration() {
     assert!(config.keybindings.mode_bindings.contains_key(&Mode::Normal));
 
     // Should have model info
-    assert!(!config.model_info.provider.is_empty());
-    assert!(!config.model_info.model.is_empty());
+    assert!(!config.model.provider.is_empty());
+    assert!(!config.model.name.is_empty());
 }
 
 #[test]
@@ -502,8 +502,6 @@ fn parse_key_chord_order_independence() {
 fn config_model_info_has_reasonable_defaults() {
     let config = Config::default();
 
-    assert!(!config.model_info.provider.is_empty());
-    assert!(!config.model_info.model.is_empty());
-    assert!(config.model_info.tokens_used <= config.model_info.tokens_available);
-    assert!(config.model_info.tokens_available > 0);
+    assert!(!config.model.provider.is_empty());
+    assert!(!config.model.name.is_empty());
 }

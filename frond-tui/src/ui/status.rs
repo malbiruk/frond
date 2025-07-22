@@ -31,7 +31,7 @@ fn build_mode_text(app_state: &AppState) -> String {
 fn build_model_info(app_state: &AppState) -> String {
     format!(
         "{}: {}",
-        app_state.config.model_info.provider, app_state.config.model_info.model
+        app_state.config.model.provider, app_state.config.model.name
     )
 }
 

@@ -4,9 +4,8 @@ use ratatui::Frame;
 use super::layout::AppLayout;
 use super::status;
 
-pub mod breadcrumb;
-pub mod content;
-pub mod scrolling;
+use super::normal_mode::breadcrumb;
+use super::normal_mode::content;
 
 pub fn render(frame: &mut Frame, app_state: &mut AppState) {
     let layout = AppLayout::new(frame.area(), app_state.mode);

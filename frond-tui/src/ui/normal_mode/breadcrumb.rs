@@ -58,11 +58,18 @@ fn breadcrumb_with_branch(app_state: &AppState, dialogue_name: &str) -> String {
 }
 
 fn build_token_info(app_state: &AppState) -> String {
-    format!(
-        "{}K/{}K",
-        app_state.config.model_info.tokens_used / 1000,
-        app_state.config.model_info.tokens_available / 1000
-    )
+    let used = format_tokens(app_state.model_info.tokens_used);
+    let available = format_tokens(app_state.model_info.tokens_available);
+    format!("{}/{}", used, available)
+}
+
+fn format_tokens(tokens: u32) -> String {
+    let k = tokens as f64 / 1000.0;
+    if k < 10.0 {
+        format!("{:.1}K", k)
+    } else {
+        format!("{}K", (k as usize))
+    }
 }
 
 fn create_breadcrumb_widget(left_text: String, right_text: String) -> Paragraph<'static> {

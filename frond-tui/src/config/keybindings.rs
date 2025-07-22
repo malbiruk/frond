@@ -1,4 +1,4 @@
-use crate::app::Mode;
+use crate::app::{EditMode, Mode};
 use crate::input::KeyChord;
 use ratatui::crossterm::event::{KeyCode, KeyModifiers};
 use std::collections::HashMap;
@@ -75,16 +75,13 @@ impl Default for Keybindings {
         let mut edit_bindings = HashMap::new();
         edit_bindings.insert("exit_mode".to_string(), parse_key_chord("esc").unwrap());
 
+        mode_bindings.insert(Mode::Edit(EditMode::Append), edit_bindings.clone());
         mode_bindings.insert(
-            Mode::Edit(crate::app::EditMode::Append),
-            edit_bindings.clone(),
-        );
-        mode_bindings.insert(
-            Mode::Edit(crate::app::EditMode::EditInPlace {
+            Mode::Edit(EditMode::EditInPlace {
                 message_id: uuid::Uuid::nil(),
                 has_messages_below: false,
             }),
-            edit_bindings,
+            edit_bindings.clone(),
         );
         Self { mode_bindings }
     }
@@ -179,8 +176,8 @@ pub fn parse_key_chord(s: &str) -> Option<KeyChord> {
 pub fn parse_mode(s: &str) -> Result<Mode, String> {
     match s {
         "normal" => Ok(Mode::Normal),
-        "edit" | "edit-append" => Ok(Mode::Edit(crate::app::EditMode::Append)),
-        "edit-inplace" => Ok(Mode::Edit(crate::app::EditMode::EditInPlace {
+        "edit" | "edit-append" => Ok(Mode::Edit(EditMode::Append)),
+        "edit-inplace" => Ok(Mode::Edit(EditMode::EditInPlace {
             message_id: uuid::Uuid::nil(),
             has_messages_below: false,
         })),
