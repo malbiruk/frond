@@ -64,11 +64,15 @@ fn build_token_info(app_state: &AppState) -> String {
 }
 
 fn format_tokens(tokens: u32) -> String {
-    let k = tokens as f64 / 1000.0;
-    if k < 10.0 {
-        format!("{:.1}K", k)
+    if tokens < 1000 {
+        tokens.to_string()
     } else {
-        format!("{}K", (k as usize))
+        let k = tokens as f64 / 1000.0;
+        if k < 10.0 {
+            format!("{:.1}K", k)
+        } else {
+            format!("{}K", (k as usize))
+        }
     }
 }
 
