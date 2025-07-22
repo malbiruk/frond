@@ -10,4 +10,5 @@ pub fn handle_edit_mode_action(state: &mut AppState, action: EditModeAction) {
 
 fn handle_exit_current_mode(state: &mut AppState) {
     state.mode = Mode::Normal;
+    state.error_message = None;
 }

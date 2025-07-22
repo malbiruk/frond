@@ -1,11 +1,10 @@
 use crate::actions::{
-    ActionRegistry, ActionSchema, CommonAction, EditModeAction, NormalModeAction, UIAction,
+    ActionRegistry, ActionSchema, CommonAction, EditModeAction, UIAction,
 };
 use crate::app::Mode;
 use crate::config::Config;
 use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use std::collections::HashMap;
-use uuid::Uuid;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct KeyChord {
@@ -76,28 +75,17 @@ impl InputHandler {
         }
     }
 
-    pub fn handle_input(
-        &self,
-        key_event: KeyEvent,
-        current_mode: Mode,
-        focused_message: Option<Uuid>,
-    ) -> Option<UIAction> {
-        // First try to get action from keybinding
+    pub fn handle_input(&self, key_event: KeyEvent, current_mode: Mode) -> Option<UIAction> {
         if let Some(action_id) = self.key_mapping.get_action_id(current_mode, key_event) {
             if let Some(schema) = self.action_registry.get_schema(&action_id) {
-                return self.schema_to_action(schema, focused_message, &current_mode);
+                return self.schema_to_action(schema, &current_mode);
             }
         }
 
         None
     }
 
-    fn schema_to_action(
-        &self,
-        schema: &ActionSchema,
-        focused_message: Option<Uuid>,
-        current_mode: &Mode,
-    ) -> Option<UIAction> {
+    fn schema_to_action(&self, schema: &ActionSchema, current_mode: &Mode) -> Option<UIAction> {
         match schema {
             ActionSchema::Common(common_schema) => {
                 use crate::actions::CommonActionSchema;
@@ -108,50 +96,7 @@ impl InputHandler {
                 Some(UIAction::Common(action))
             }
             ActionSchema::Normal(normal_schema) => {
-                use crate::actions::NormalModeActionSchema;
-                let action = match normal_schema {
-                    NormalModeActionSchema::ScrollUp => NormalModeAction::ScrollUp,
-                    NormalModeActionSchema::ScrollDown => NormalModeAction::ScrollDown,
-                    NormalModeActionSchema::ScrollPageUp => NormalModeAction::ScrollPageUp,
-                    NormalModeActionSchema::ScrollPageDown => NormalModeAction::ScrollPageDown,
-                    NormalModeActionSchema::ScrollHalfPageUp => NormalModeAction::ScrollHalfPageUp,
-                    NormalModeActionSchema::ScrollHalfPageDown => {
-                        NormalModeAction::ScrollHalfPageDown
-                    }
-                    NormalModeActionSchema::ScrollToTop => NormalModeAction::ScrollToTop,
-                    NormalModeActionSchema::ScrollToBottom => NormalModeAction::ScrollToBottom,
-                    NormalModeActionSchema::EnterAppendMode => NormalModeAction::EnterAppendMode,
-                    NormalModeActionSchema::EnterCommandPalette => {
-                        NormalModeAction::EnterCommandPalette
-                    }
-                    NormalModeActionSchema::NextBranch => NormalModeAction::NextBranch,
-                    NormalModeActionSchema::PrevBranch => NormalModeAction::PrevBranch,
-                    NormalModeActionSchema::NextTree => NormalModeAction::NextTree,
-                    NormalModeActionSchema::PrevTree => NormalModeAction::PrevTree,
-
-                    // Actions that require focused message
-                    NormalModeActionSchema::EnterEditMode => {
-                        NormalModeAction::EnterEditMode(focused_message?)
-                    }
-                    NormalModeActionSchema::DeleteMessage => {
-                        NormalModeAction::DeleteMessage(focused_message?)
-                    }
-                    NormalModeActionSchema::ForkBranch => {
-                        NormalModeAction::ForkBranch(focused_message?)
-                    }
-                    NormalModeActionSchema::HideMessage => {
-                        NormalModeAction::HideMessage(focused_message?)
-                    }
-                    NormalModeActionSchema::ShowMessage => {
-                        NormalModeAction::ShowMessage(focused_message?)
-                    }
-                    NormalModeActionSchema::ScrollToPreviousMessage => {
-                        NormalModeAction::ScrollToPreviousMessage(focused_message?)
-                    }
-                    NormalModeActionSchema::ScrollToNextMessage => {
-                        NormalModeAction::ScrollToNextMessage(focused_message?)
-                    }
-                };
+                let action = normal_schema.to_action();
                 Some(UIAction::NormalMode(action))
             }
             ActionSchema::Edit(edit_schema) => {

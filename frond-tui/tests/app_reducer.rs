@@ -9,7 +9,6 @@ use frond::app::state::ModelInfo;
 use frond::app::{AppState, EditMode, Mode, reducer};
 use frond::config::Config;
 use frond_core::{Branch, Dialogue, Message, Role, Tree};
-use uuid::Uuid;
 
 fn create_test_dialogue_with_multiple_branches() -> Dialogue {
     let mut dialogue = Dialogue::new("Multi-Branch Test");
@@ -88,7 +87,7 @@ fn enter_edit_mode_with_valid_message_transitions_correctly() {
     let mut state = create_app_state_with_dialogue(dialogue);
 
     let message_id = state.focused_message_id.unwrap();
-    let action = UIAction::NormalMode(NormalModeAction::EnterEditMode(message_id));
+    let action = UIAction::NormalMode(NormalModeAction::EnterEditMode);
 
     reducer::reduce(&mut state, action);
 
@@ -111,7 +110,8 @@ fn enter_edit_mode_with_nil_message_shows_error() {
     let dialogue = create_test_dialogue_with_multiple_branches();
     let mut state = create_app_state_with_dialogue(dialogue);
 
-    let action = UIAction::NormalMode(NormalModeAction::EnterEditMode(Uuid::nil()));
+    state.focused_message_id = None;
+    let action = UIAction::NormalMode(NormalModeAction::EnterEditMode);
 
     reducer::reduce(&mut state, action);
 
@@ -282,7 +282,7 @@ fn delete_message_removes_from_branch() {
 
     let initial_count = state.current_messages().len();
     let message_id = state.focused_message_id.unwrap();
-    let action = UIAction::NormalMode(NormalModeAction::DeleteMessage(message_id));
+    let action = UIAction::NormalMode(NormalModeAction::DeleteMessage);
 
     reducer::reduce(&mut state, action);
 
@@ -301,8 +301,7 @@ fn delete_message_updates_focus_correctly() {
     let dialogue = create_test_dialogue_with_multiple_branches();
     let mut state = create_app_state_with_dialogue(dialogue);
 
-    let message_id = state.focused_message_id.unwrap();
-    let action = UIAction::NormalMode(NormalModeAction::DeleteMessage(message_id));
+    let action = UIAction::NormalMode(NormalModeAction::DeleteMessage);
 
     reducer::reduce(&mut state, action);
 
@@ -321,8 +320,7 @@ fn fork_branch_creates_new_branch() {
     let mut state = create_app_state_with_dialogue(dialogue);
 
     let initial_branch_count = state.current_tree().unwrap().branches().len();
-    let message_id = state.focused_message_id.unwrap();
-    let action = UIAction::NormalMode(NormalModeAction::ForkBranch(message_id));
+    let action = UIAction::NormalMode(NormalModeAction::ForkBranch);
 
     reducer::reduce(&mut state, action);
 
@@ -337,8 +335,7 @@ fn hide_message_updates_visibility() {
     let dialogue = create_test_dialogue_with_multiple_branches();
     let mut state = create_app_state_with_dialogue(dialogue);
 
-    let message_id = state.focused_message_id.unwrap();
-    let action = UIAction::NormalMode(NormalModeAction::HideMessage(message_id));
+    let action = UIAction::NormalMode(NormalModeAction::HideMessage);
 
     reducer::reduce(&mut state, action);
 
@@ -351,8 +348,7 @@ fn show_message_updates_visibility() {
     let dialogue = create_test_dialogue_with_multiple_branches();
     let mut state = create_app_state_with_dialogue(dialogue);
 
-    let message_id = state.focused_message_id.unwrap();
-    let action = UIAction::NormalMode(NormalModeAction::ShowMessage(message_id));
+    let action = UIAction::NormalMode(NormalModeAction::ShowMessage);
 
     reducer::reduce(&mut state, action);
 
@@ -476,8 +472,6 @@ fn reducer_handles_all_action_types_without_panic() {
     let dialogue = create_test_dialogue_with_multiple_branches();
     let mut state = create_app_state_with_dialogue(dialogue);
 
-    let message_id = state.focused_message_id.unwrap();
-
     // Test all action types
     let actions = vec![
         // Common actions
@@ -486,10 +480,10 @@ fn reducer_handles_all_action_types_without_panic() {
         // Normal mode actions
         UIAction::NormalMode(NormalModeAction::ScrollUp),
         UIAction::NormalMode(NormalModeAction::ScrollDown),
-        UIAction::NormalMode(NormalModeAction::EnterEditMode(message_id)),
+        UIAction::NormalMode(NormalModeAction::EnterEditMode),
         UIAction::NormalMode(NormalModeAction::EnterAppendMode),
         UIAction::NormalMode(NormalModeAction::EnterCommandPalette),
-        UIAction::NormalMode(NormalModeAction::DeleteMessage(message_id)),
+        UIAction::NormalMode(NormalModeAction::DeleteMessage),
         UIAction::NormalMode(NormalModeAction::NextBranch),
         UIAction::NormalMode(NormalModeAction::PrevBranch),
         // Edit mode actions

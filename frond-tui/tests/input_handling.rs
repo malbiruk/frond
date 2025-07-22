@@ -17,7 +17,7 @@ fn quit_key_produces_quit_action() {
     let handler = InputHandler::new(&config);
 
     let quit_key = KeyEvent::new(KeyCode::Char('q'), KeyModifiers::NONE);
-    let action = handler.handle_input(quit_key, Mode::Normal, None);
+    let action = handler.handle_input(quit_key, Mode::Normal);
 
     assert!(action.is_some(), "Quit key should produce an action");
 }
@@ -28,7 +28,7 @@ fn unmapped_keys_produce_no_action() {
     let handler = InputHandler::new(&config);
 
     let unmapped_key = KeyEvent::new(KeyCode::Char('z'), KeyModifiers::NONE);
-    let action = handler.handle_input(unmapped_key, Mode::Normal, None);
+    let action = handler.handle_input(unmapped_key, Mode::Normal);
 
     assert!(action.is_none(), "Unmapped keys should not produce actions");
 }
@@ -37,10 +37,9 @@ fn unmapped_keys_produce_no_action() {
 fn edit_key_produces_action_in_normal_mode() {
     let config = Config::default();
     let handler = InputHandler::new(&config);
-    let message_id = Uuid::new_v4();
 
     let edit_key = KeyEvent::new(KeyCode::Char('e'), KeyModifiers::NONE);
-    let action = handler.handle_input(edit_key, Mode::Normal, Some(message_id));
+    let action = handler.handle_input(edit_key, Mode::Normal);
 
     assert!(
         action.is_some(),
@@ -54,7 +53,7 @@ fn escape_key_produces_action_in_edit_mode() {
     let handler = InputHandler::new(&config);
 
     let escape_key = KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE);
-    let action = handler.handle_input(escape_key, Mode::Edit(EditMode::Append), None);
+    let action = handler.handle_input(escape_key, Mode::Edit(EditMode::Append));
 
     assert!(
         action.is_some(),
@@ -71,9 +70,8 @@ fn normal_mode_keys_dont_work_in_edit_mode() {
 
     // Edit key should work in normal mode with focus, not in edit mode
     let edit_key = KeyEvent::new(KeyCode::Char('e'), KeyModifiers::NONE);
-    let message_id = Uuid::new_v4();
-    let normal_action = handler.handle_input(edit_key, Mode::Normal, Some(message_id));
-    let _edit_action = handler.handle_input(edit_key, Mode::Edit(EditMode::Append), None);
+    let normal_action = handler.handle_input(edit_key, Mode::Normal);
+    let _edit_action = handler.handle_input(edit_key, Mode::Edit(EditMode::Append));
 
     assert!(
         normal_action.is_some(),
@@ -89,8 +87,8 @@ fn edit_mode_keys_dont_work_in_normal_mode() {
     let handler = InputHandler::new(&config);
 
     let escape_key = KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE);
-    let normal_action = handler.handle_input(escape_key, Mode::Normal, None);
-    let edit_action = handler.handle_input(escape_key, Mode::Edit(EditMode::Append), None);
+    let normal_action = handler.handle_input(escape_key, Mode::Normal);
+    let edit_action = handler.handle_input(escape_key, Mode::Edit(EditMode::Append));
 
     assert!(
         normal_action.is_none(),
@@ -102,39 +100,27 @@ fn edit_mode_keys_dont_work_in_normal_mode() {
 // === Context Sensitivity ===
 
 #[test]
-fn focus_sensitive_actions_work_with_and_without_focus() {
+fn focus_sensitive_actions_work_with_focus() {
     let config = Config::default();
     let handler = InputHandler::new(&config);
-    let message_id = Uuid::new_v4();
 
     let edit_key = KeyEvent::new(KeyCode::Char('e'), KeyModifiers::NONE);
 
-    let action_with_focus = handler.handle_input(edit_key, Mode::Normal, Some(message_id));
-    let action_without_focus = handler.handle_input(edit_key, Mode::Normal, None);
+    let action_with_focus = handler.handle_input(edit_key, Mode::Normal);
 
     assert!(action_with_focus.is_some(), "Edit should work with focus");
-    assert!(
-        action_without_focus.is_none(),
-        "Edit should not work without focus (requires focus)"
-    );
 }
 
 #[test]
-fn delete_action_works_with_and_without_focus() {
+fn delete_action_works_with_focus() {
     let config = Config::default();
     let handler = InputHandler::new(&config);
-    let message_id = Uuid::new_v4();
 
     let delete_key = KeyEvent::new(KeyCode::Char('d'), KeyModifiers::NONE);
 
-    let action_with_focus = handler.handle_input(delete_key, Mode::Normal, Some(message_id));
-    let action_without_focus = handler.handle_input(delete_key, Mode::Normal, None);
+    let action_with_focus = handler.handle_input(delete_key, Mode::Normal);
 
     assert!(action_with_focus.is_some(), "Delete should work with focus");
-    assert!(
-        action_without_focus.is_none(),
-        "Delete should not work without focus (requires focus)"
-    );
 }
 
 // === Navigation Keys ===
@@ -148,7 +134,7 @@ fn arrow_keys_produce_actions() {
 
     for key in keys {
         let event = KeyEvent::new(key, KeyModifiers::NONE);
-        let action = handler.handle_input(event, Mode::Normal, None);
+        let action = handler.handle_input(event, Mode::Normal);
 
         assert!(
             action.is_some(),
@@ -168,10 +154,10 @@ fn navigation_produces_different_actions() {
     let left = KeyEvent::new(KeyCode::Left, KeyModifiers::NONE);
     let right = KeyEvent::new(KeyCode::Right, KeyModifiers::NONE);
 
-    let up_action = handler.handle_input(up, Mode::Normal, None);
-    let down_action = handler.handle_input(down, Mode::Normal, None);
-    let left_action = handler.handle_input(left, Mode::Normal, None);
-    let right_action = handler.handle_input(right, Mode::Normal, None);
+    let up_action = handler.handle_input(up, Mode::Normal);
+    let down_action = handler.handle_input(down, Mode::Normal);
+    let left_action = handler.handle_input(left, Mode::Normal);
+    let right_action = handler.handle_input(right, Mode::Normal);
 
     // All should produce actions
     assert!(up_action.is_some());
@@ -198,7 +184,7 @@ fn ctrl_keys_work() {
     let handler = InputHandler::new(&config);
 
     let ctrl_p = KeyEvent::new(KeyCode::Char('p'), KeyModifiers::CONTROL);
-    let _action = handler.handle_input(ctrl_p, Mode::Normal, None);
+    let _action = handler.handle_input(ctrl_p, Mode::Normal);
 
     // Should either produce an action or gracefully handle unmapped ctrl keys
     // (behavior depends on config, but shouldn't panic)
@@ -210,7 +196,7 @@ fn shift_keys_handled_gracefully() {
     let handler = InputHandler::new(&config);
 
     let shift_a = KeyEvent::new(KeyCode::Char('A'), KeyModifiers::SHIFT);
-    let _action = handler.handle_input(shift_a, Mode::Normal, None);
+    let _action = handler.handle_input(shift_a, Mode::Normal);
 
     // Should handle gracefully (may or may not produce action)
 }
@@ -273,8 +259,8 @@ fn handler_consistent_across_calls() {
 
     let key = KeyEvent::new(KeyCode::Char('e'), KeyModifiers::NONE);
 
-    let action1 = handler.handle_input(key, Mode::Normal, None);
-    let action2 = handler.handle_input(key, Mode::Normal, None);
+    let action1 = handler.handle_input(key, Mode::Normal);
+    let action2 = handler.handle_input(key, Mode::Normal);
 
     // Should be deterministic
     match (action1, action2) {
@@ -292,14 +278,13 @@ fn different_edit_modes_handle_escape_consistently() {
 
     let escape = KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE);
 
-    let append_action = handler.handle_input(escape, Mode::Edit(EditMode::Append), None);
+    let append_action = handler.handle_input(escape, Mode::Edit(EditMode::Append));
     let _edit_action = handler.handle_input(
         escape,
         Mode::Edit(EditMode::EditInPlace {
             message_id,
             has_messages_below: true,
         }),
-        None,
     );
 
     // At least append mode should handle escape consistently
@@ -331,7 +316,7 @@ fn handler_handles_special_keys_gracefully() {
 
     for key in special_keys {
         let event = KeyEvent::new(key, KeyModifiers::NONE);
-        let _action = handler.handle_input(event, Mode::Normal, None);
+        let _action = handler.handle_input(event, Mode::Normal);
 
         // Should not panic, may or may not produce action
         // The key point is graceful handling
@@ -345,7 +330,7 @@ fn handler_handles_complex_modifier_combinations() {
 
     let complex_modifiers = KeyModifiers::CONTROL | KeyModifiers::SHIFT | KeyModifiers::ALT;
     let event = KeyEvent::new(KeyCode::Char('a'), complex_modifiers);
-    let _action = handler.handle_input(event, Mode::Normal, None);
+    let _action = handler.handle_input(event, Mode::Normal);
 
     // Should handle gracefully without panicking
 }

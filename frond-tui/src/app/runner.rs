@@ -36,11 +36,7 @@ impl App {
                     continue;
                 }
 
-                if let Some(action) = self.input_handler.handle_input(
-                    key_event,
-                    self.state.mode,
-                    self.state.focused_message_id,
-                ) {
+                if let Some(action) = self.input_handler.handle_input(key_event, self.state.mode) {
                     match action {
                         UIAction::Common(CommonAction::Quit) => break,
                         other => {

@@ -3,7 +3,8 @@ use std::collections::HashMap;
 use strum::IntoEnumIterator;
 
 pub mod common;
-pub mod edit_mode;
+pub mod edit_mode; 
+pub mod macros;
 pub mod normal_mode;
 
 pub use common::{CommonAction, CommonActionSchema};

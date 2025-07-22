@@ -14,23 +14,23 @@ pub fn handle_normal_mode_action(state: &mut AppState, action: NormalModeAction)
         NormalModeAction::ScrollPageDown => handle_scroll_page_down(state),
         NormalModeAction::ScrollToTop => handle_scroll_to_top(state),
         NormalModeAction::ScrollToBottom => handle_scroll_to_bottom(state),
-        NormalModeAction::ScrollToNextMessage(message_id) => {
-            handle_scroll_to_next_message(state, message_id)
+        NormalModeAction::ScrollToNextMessage => {
+            handle_scroll_to_next_message(state)
         }
-        NormalModeAction::ScrollToPreviousMessage(message_id) => {
-            handle_scroll_to_previous_message(state, message_id)
+        NormalModeAction::ScrollToPreviousMessage => {
+            handle_scroll_to_previous_message(state)
         }
 
         // Mode transitions
-        NormalModeAction::EnterEditMode(message_id) => handle_enter_edit_mode(state, message_id),
+        NormalModeAction::EnterEditMode => handle_enter_edit_mode(state),
         NormalModeAction::EnterAppendMode => handle_enter_append_mode(state),
         NormalModeAction::EnterCommandPalette => handle_enter_command_palette(state),
 
         // Message actions that use frond-core
-        NormalModeAction::DeleteMessage(message_id) => handle_delete_message(state, message_id),
-        NormalModeAction::ForkBranch(message_id) => handle_fork_branch(state, message_id),
-        NormalModeAction::HideMessage(message_id) => handle_hide_message(state, message_id),
-        NormalModeAction::ShowMessage(message_id) => handle_show_message(state, message_id),
+        NormalModeAction::DeleteMessage => handle_delete_message(state),
+        NormalModeAction::ForkBranch => handle_fork_branch(state),
+        NormalModeAction::HideMessage => handle_hide_message(state),
+        NormalModeAction::ShowMessage => handle_show_message(state),
 
         // Branch/Tree navigation
         NormalModeAction::NextBranch => handle_next_branch(state),
@@ -91,28 +91,32 @@ fn handle_scroll_to_adjacent_message<F>(
     }
 }
 
-fn handle_scroll_to_next_message(state: &mut AppState, message_id: Uuid) {
-    handle_scroll_to_adjacent_message(state, message_id, |current, len| {
-        if current + 1 < len {
-            Some(current + 1)
-        } else {
-            None
-        }
-    });
+fn handle_scroll_to_next_message(state: &mut AppState) {
+    if let Some(message_id) = state.focused_message_id {
+        handle_scroll_to_adjacent_message(state, message_id, |current, len| {
+            if current + 1 < len {
+                Some(current + 1)
+            } else {
+                None
+            }
+        });
+    }
 }
 
-fn handle_scroll_to_previous_message(state: &mut AppState, message_id: Uuid) {
-    handle_scroll_to_adjacent_message(state, message_id, |current, _len| {
-        if current > 0 { Some(current - 1) } else { None }
-    });
+fn handle_scroll_to_previous_message(state: &mut AppState) {
+    if let Some(message_id) = state.focused_message_id {
+        handle_scroll_to_adjacent_message(state, message_id, |current, _len| {
+            if current > 0 { Some(current - 1) } else { None }
+        });
+    }
 }
 
 // Mode transition handlers
-fn handle_enter_edit_mode(state: &mut AppState, message_id: Uuid) {
-    if message_id == Uuid::nil() {
+fn handle_enter_edit_mode(state: &mut AppState) {
+    let Some(message_id) = state.focused_message_id else {
         state.error_message = Some("No message selected for editing".to_string());
         return;
-    }
+    };
 
     let has_messages_below = state.has_messages_after(message_id);
     state.mode = crate::app::Mode::Edit(crate::app::EditMode::EditInPlace {
@@ -132,7 +136,12 @@ fn handle_enter_command_palette(state: &mut AppState) {
 }
 
 // Message action handlers that bridge to frond-core
-fn handle_delete_message(state: &mut AppState, message_id: Uuid) {
+fn handle_delete_message(state: &mut AppState) {
+    let Some(message_id) = state.focused_message_id else {
+        state.error_message = Some("No message selected for deletion".to_string());
+        return;
+    };
+
     if let Some(branch_id) = state.current_branch_id {
         let message_index = state.get_message_index(message_id);
 
@@ -149,7 +158,12 @@ fn handle_delete_message(state: &mut AppState, message_id: Uuid) {
     }
 }
 
-fn handle_fork_branch(state: &mut AppState, message_id: Uuid) {
+fn handle_fork_branch(state: &mut AppState) {
+    let Some(message_id) = state.focused_message_id else {
+        state.error_message = Some("No message selected for forking".to_string());
+        return;
+    };
+
     if let Some(tree_id) = state.current_tree_id {
         if let Some(branch_id) = state.current_branch_id {
             let new_branch_name = format!("fork-{}", chrono::Utc::now().timestamp());
@@ -172,13 +186,23 @@ fn handle_fork_branch(state: &mut AppState, message_id: Uuid) {
     }
 }
 
-fn handle_hide_message(state: &mut AppState, message_id: Uuid) {
+fn handle_hide_message(state: &mut AppState) {
+    let Some(message_id) = state.focused_message_id else {
+        state.error_message = Some("No message selected for hiding".to_string());
+        return;
+    };
+
     if let Err(e) = DialogueService::hide_message(&mut state.dialogue, message_id) {
         state.error_message = Some(e);
     }
 }
 
-fn handle_show_message(state: &mut AppState, message_id: Uuid) {
+fn handle_show_message(state: &mut AppState) {
+    let Some(message_id) = state.focused_message_id else {
+        state.error_message = Some("No message selected for showing".to_string());
+        return;
+    };
+
     if let Err(e) = DialogueService::show_message(&mut state.dialogue, message_id) {
         state.error_message = Some(e);
     }
