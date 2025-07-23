@@ -1,3 +1,25 @@
+/// Macro for creating type-safe collection wrappers around Vec<T>.
+/// 
+/// This macro generates a wrapper struct with methods for:
+/// - Standard Vec operations (get, push, remove, etc.)
+/// - ID-based operations (assumes items have an `id()` method)
+/// - Iterator support and conversion methods
+/// - Index trait implementation for direct access
+///
+/// Usage:
+/// ```ignore
+/// define_collection_wrapper!(Messages, Message);
+/// 
+/// // Creates:
+/// // pub struct Messages(Vec<Message>);
+/// // impl Messages { ... all the methods ... }
+/// ```
+///
+/// Generated methods include:
+/// - Basic: `new()`, `from_vec()`, `get()`, `len()`, `is_empty()`
+/// - ID-based: `get_by_id()`, `get_index_by_id()`, `remove_by_id()`
+/// - Mutation: `push()`, `extend()`, `remove()`, `insert()`, `clear()`
+/// - Access: `iter()`, `as_slice()`, `into_vec()`, `to_vec()`
 #[macro_export]
 macro_rules! define_collection_wrapper {
     ($wrapper_name:ident, $item_type:ty) => {
@@ -114,6 +136,40 @@ macro_rules! define_collection_wrapper {
     };
 }
 
+/// Macro for defining core domain entities with hierarchical structure.
+/// 
+/// This macro generates entity structs that follow a consistent pattern:
+/// - Each entity has id, name, description and a collection of child entities
+/// - Standard methods for accessing and manipulating child collections
+/// - Methods follow naming conventions (get_X_by_id, add_X, etc.)
+/// - Optional extra fields can be added to the generated struct
+///
+/// Usage:
+/// ```ignore
+/// define_core_entity! {
+///     pub struct Dialogue<Tree> {
+///         tree, trees
+///     }
+/// }
+/// 
+/// // With extra fields:
+/// define_core_entity! {
+///     pub struct Branch<Message> {
+///         message, messages,
+///         extra_fields {
+///             (is_archived: bool, false),
+///             (created_at: std::time::SystemTime, std::time::SystemTime::now()),
+///         }
+///     }
+/// }
+/// ```
+///
+/// Generated struct includes:
+/// - `id: uuid::Uuid` - unique identifier
+/// - `name: String` - entity name
+/// - `description: Option<String>` - optional description
+/// - Collection of child entities with full CRUD operations
+/// - Optional extra fields with default values
 #[macro_export]
 macro_rules! define_core_entity {
     (
