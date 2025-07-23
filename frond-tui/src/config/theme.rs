@@ -40,7 +40,7 @@ pub struct Theme {
     pub assistant: MessageTheme,
     pub user: MessageTheme,
     pub focused: FocusedTheme,
-    pub help_key_color: Color,
+    pub help: Help,
 }
 
 #[derive(Debug, Clone)]
@@ -56,6 +56,12 @@ pub struct MessageTheme {
 pub struct FocusedTheme {
     pub frame_color: Color,
     pub border_type: BorderType,
+    pub text_color: Color,
+}
+
+#[derive(Debug, Clone)]
+pub struct Help {
+    pub key_color: Color,
     pub text_color: Color,
 }
 
@@ -84,9 +90,10 @@ pub fn default_theme_string_map() -> HashMap<String, HashMap<String, String>> {
     focused.insert("text_color".to_string(), "white".to_string());
     map.insert("focused".to_string(), focused);
 
-    let mut help_key_color = HashMap::new();
-    help_key_color.insert("color".to_string(), "blue".to_string());
-    map.insert("help_key_color".to_string(), help_key_color);
+    let mut help = HashMap::new();
+    help.insert("key_color".to_string(), "blue".to_string());
+    help.insert("text_color".to_string(), "white".to_string());
+    map.insert("help".to_string(), help);
 
     map
 }
@@ -110,22 +117,16 @@ impl Theme {
             defaults.get("focused").unwrap(),
         )?;
 
-        let help_key_color = get_section("help_key_color")
-            .and_then(|m| m.get("color"))
-            .and_then(|s| parse_color(s))
-            .or_else(|| {
-                defaults
-                    .get("help_key_color")
-                    .and_then(|m| m.get("color"))
-                    .and_then(|s| parse_color(s))
-            })
-            .unwrap_or(Color::Blue);
+        let help = Help::from_string_map(
+            get_section("help").unwrap_or(&HashMap::new()),
+            defaults.get("help").unwrap(),
+        )?;
 
         Ok(Self {
             assistant,
             user,
             focused,
-            help_key_color,
+            help,
         })
     }
 }
@@ -169,6 +170,24 @@ impl FocusedTheme {
             border_type: get("border_type")
                 .and_then(|s| parse_border_type(&s))
                 .unwrap_or(BorderType::Double),
+            text_color: get("text_color")
+                .and_then(|s| parse_color(&s))
+                .unwrap_or(Color::White),
+        })
+    }
+}
+
+impl Help {
+    pub fn from_string_map(
+        raw: &HashMap<String, String>,
+        defaults: &HashMap<String, String>,
+    ) -> Result<Self, String> {
+        let get = |k: &str| raw.get(k).or_else(|| defaults.get(k)).cloned();
+
+        Ok(Self {
+            key_color: get("key_color")
+                .and_then(|s| parse_color(&s))
+                .unwrap_or(Color::Blue),
             text_color: get("text_color")
                 .and_then(|s| parse_color(&s))
                 .unwrap_or(Color::White),

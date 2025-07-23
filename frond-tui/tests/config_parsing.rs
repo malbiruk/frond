@@ -413,7 +413,7 @@ fn theme_default_has_valid_colors() {
     assert_eq!(theme.user.display_name, "User");
 
     // Help color
-    assert_eq!(theme.help_key_color, Color::Blue);
+    assert_eq!(theme.help.key_color, Color::Blue);
 }
 
 #[test]

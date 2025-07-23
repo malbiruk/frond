@@ -75,9 +75,12 @@ fn create_error_help_line(app_state: &AppState) -> Line<'static> {
     Line::from(vec![
         Span::styled(
             "esc",
-            Style::default().fg(app_state.config.theme.help_key_color),
+            Style::default().fg(app_state.config.theme.help.key_color),
         ),
-        Span::raw(": dismiss"),
+        Span::styled(
+            ": dismiss",
+            Style::default().fg(app_state.config.theme.help.text_color),
+        ),
     ])
 }
 
@@ -125,9 +128,12 @@ fn create_action_spans(
     Some(vec![
         Span::styled(
             key_display,
-            Style::default().fg(app_state.config.theme.help_key_color),
+            Style::default().fg(app_state.config.theme.help.key_color),
         ),
-        Span::raw(format!(": {}  ", schema.name())),
+        Span::styled(
+            format!(": {}  ", schema.name()),
+            Style::default().fg(app_state.config.theme.help.text_color),
+        ),
     ])
 }
 
