@@ -66,36 +66,48 @@ pub struct Help {
 }
 
 pub fn default_theme_string_map() -> HashMap<String, HashMap<String, String>> {
-    let mut map = HashMap::new();
-
-    let mut assistant = HashMap::new();
-    assistant.insert("frame_color".to_string(), "blue".to_string());
-    assistant.insert("title_color".to_string(), "blue".to_string());
-    assistant.insert("text_color".to_string(), "white".to_string());
-    assistant.insert("border_type".to_string(), "plain".to_string());
-    assistant.insert("display_name".to_string(), "Assistant".to_string());
-    map.insert("assistant".to_string(), assistant);
-
-    let mut user = HashMap::new();
-    user.insert("frame_color".to_string(), "dark_gray".to_string());
-    user.insert("title_color".to_string(), "white".to_string());
-    user.insert("text_color".to_string(), "white".to_string());
-    user.insert("border_type".to_string(), "plain".to_string());
-    user.insert("display_name".to_string(), "User".to_string());
-    map.insert("user".to_string(), user);
-
-    let mut focused = HashMap::new();
-    focused.insert("frame_color".to_string(), "white".to_string());
-    focused.insert("border_type".to_string(), "double".to_string());
-    focused.insert("text_color".to_string(), "white".to_string());
-    map.insert("focused".to_string(), focused);
-
-    let mut help = HashMap::new();
-    help.insert("key_color".to_string(), "blue".to_string());
-    help.insert("text_color".to_string(), "white".to_string());
-    map.insert("help".to_string(), help);
-
-    map
+    [
+        (
+            "assistant",
+            &[
+                ("frame_color", "blue"),
+                ("title_color", "blue"),
+                ("text_color", "white"),
+                ("border_type", "plain"),
+                ("display_name", "Assistant"),
+            ][..],
+        ),
+        (
+            "user",
+            &[
+                ("frame_color", "dark_gray"),
+                ("title_color", "white"),
+                ("text_color", "white"),
+                ("border_type", "plain"),
+                ("display_name", "User"),
+            ],
+        ),
+        (
+            "focused",
+            &[
+                ("frame_color", "white"),
+                ("border_type", "double"),
+                ("text_color", "white"),
+            ],
+        ),
+        ("help", &[("key_color", "blue"), ("text_color", "white")]),
+    ]
+    .into_iter()
+    .map(|(section, fields)| {
+        (
+            section.to_string(),
+            fields
+                .iter()
+                .map(|(k, v)| (k.to_string(), v.to_string()))
+                .collect(),
+        )
+    })
+    .collect()
 }
 
 impl Theme {
