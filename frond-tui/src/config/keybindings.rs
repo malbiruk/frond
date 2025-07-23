@@ -3,6 +3,51 @@ use crate::input::KeyChord;
 use ratatui::crossterm::event::{KeyCode, KeyModifiers};
 use std::collections::HashMap;
 
+pub fn default_keybindings_string_map() -> HashMap<String, HashMap<String, String>> {
+    [
+        (
+            "normal",
+            &[
+                ("edit_message", "e"),
+                ("delete_message", "d"),
+                ("fork_branch", "f"),
+                ("hide_message", "h"),
+                ("append_message", "a"),
+                ("show_help", "?"),
+                ("scroll_up", "up"),
+                ("scroll_down", "down"),
+                ("scroll_half_page_up", "ctrl-u"),
+                ("scroll_half_page_down", "ctrl-d"),
+                ("scroll_page_up", "pgup"),
+                ("scroll_page_down", "pgdn"),
+                ("scroll_to_top", "home"),
+                ("scroll_to_bottom", "end"),
+                ("scroll_to_previous_message", "shift-up"),
+                ("scroll_to_next_message", "shift-down"),
+                ("prev_branch", "left"),
+                ("next_branch", "right"),
+                ("prev_tree", "shift-left"),
+                ("next_tree", "shift-right"),
+                ("command_palette", "ctrl-p"),
+                ("quit", "q"),
+            ][..],
+        ),
+        ("edit-append", &[("exit_mode", "esc")]),
+        ("edit-inplace", &[("exit_mode", "esc")]),
+    ]
+    .into_iter()
+    .map(|(mode, actions)| {
+        (
+            mode.to_string(),
+            actions
+                .iter()
+                .map(|(action, key)| (action.to_string(), key.to_string()))
+                .collect(),
+        )
+    })
+    .collect()
+}
+
 #[derive(Debug, Clone)]
 pub struct Keybindings {
     // Action ID -> KeyChord mapping per mode
@@ -11,79 +56,8 @@ pub struct Keybindings {
 
 impl Default for Keybindings {
     fn default() -> Self {
-        let mut mode_bindings = HashMap::new();
-
-        let mut normal_bindings = HashMap::new();
-        normal_bindings.insert("edit_message".to_string(), parse_key_chord("e").unwrap());
-        normal_bindings.insert("delete_message".to_string(), parse_key_chord("d").unwrap());
-        normal_bindings.insert("fork_branch".to_string(), parse_key_chord("f").unwrap());
-        normal_bindings.insert("hide_message".to_string(), parse_key_chord("h").unwrap());
-        normal_bindings.insert("append_message".to_string(), parse_key_chord("a").unwrap());
-        normal_bindings.insert("show_help".to_string(), parse_key_chord("?").unwrap());
-        normal_bindings.insert("scroll_up".to_string(), parse_key_chord("up").unwrap());
-        normal_bindings.insert("scroll_down".to_string(), parse_key_chord("down").unwrap());
-        normal_bindings.insert(
-            "scroll_half_page_up".to_string(),
-            parse_key_chord("ctrl-u").unwrap(),
-        );
-        normal_bindings.insert(
-            "scroll_half_page_down".to_string(),
-            parse_key_chord("ctrl-d").unwrap(),
-        );
-        normal_bindings.insert(
-            "scroll_page_up".to_string(),
-            parse_key_chord("pgup").unwrap(),
-        );
-        normal_bindings.insert(
-            "scroll_page_down".to_string(),
-            parse_key_chord("pgdn").unwrap(),
-        );
-        normal_bindings.insert(
-            "scroll_to_top".to_string(),
-            parse_key_chord("home").unwrap(),
-        );
-        normal_bindings.insert(
-            "scroll_to_bottom".to_string(),
-            parse_key_chord("end").unwrap(),
-        );
-        normal_bindings.insert(
-            "scroll_to_previous_message".to_string(),
-            parse_key_chord("shift-up").unwrap(),
-        );
-        normal_bindings.insert(
-            "scroll_to_next_message".to_string(),
-            parse_key_chord("shift-down").unwrap(),
-        );
-        normal_bindings.insert("prev_branch".to_string(), parse_key_chord("left").unwrap());
-        normal_bindings.insert("next_branch".to_string(), parse_key_chord("right").unwrap());
-        normal_bindings.insert(
-            "prev_tree".to_string(),
-            parse_key_chord("shift-left").unwrap(),
-        );
-        normal_bindings.insert(
-            "next_tree".to_string(),
-            parse_key_chord("shift-right").unwrap(),
-        );
-        normal_bindings.insert(
-            "command_palette".to_string(),
-            parse_key_chord("ctrl-p").unwrap(),
-        );
-        normal_bindings.insert("quit".to_string(), parse_key_chord("q").unwrap());
-
-        mode_bindings.insert(Mode::Normal, normal_bindings);
-
-        let mut edit_bindings = HashMap::new();
-        edit_bindings.insert("exit_mode".to_string(), parse_key_chord("esc").unwrap());
-
-        mode_bindings.insert(Mode::Edit(EditMode::Append), edit_bindings.clone());
-        mode_bindings.insert(
-            Mode::Edit(EditMode::EditInPlace {
-                message_id: uuid::Uuid::nil(),
-                has_messages_below: false,
-            }),
-            edit_bindings.clone(),
-        );
-        Self { mode_bindings }
+        Keybindings::from_string_map(default_keybindings_string_map())
+            .expect("Default keybindings string map is valid")
     }
 }
 
@@ -110,19 +84,47 @@ impl Keybindings {
     pub fn from_string_map(
         raw: HashMap<String, HashMap<String, String>>,
     ) -> Result<Keybindings, String> {
-        let mut mode_bindings = HashMap::new();
-        for (mode_str, actions) in raw {
-            let mode = parse_mode(&mode_str)?; // You'll need a parser for Mode
-            let mut action_map = HashMap::new();
-            for (action_id, key_str) in actions {
-                let key_chord = parse_key_chord(&key_str)
-                    .ok_or_else(|| format!("Invalid key chord: {}", key_str))?;
-                action_map.insert(action_id, key_chord);
-            }
-            mode_bindings.insert(mode, action_map);
-        }
+        validate_raw_config(&raw)?;
+        let mode_bindings = build_mode_bindings(raw)?;
         Ok(Keybindings { mode_bindings })
     }
+}
+
+fn validate_raw_config(raw: &HashMap<String, HashMap<String, String>>) -> Result<(), String> {
+    for (mode_str, raw_actions) in raw {
+        parse_mode(mode_str)?;
+        for (action_id, key_str) in raw_actions {
+            parse_key_chord(key_str).ok_or_else(|| {
+                format!("Invalid key chord: {} for action: {}", key_str, action_id)
+            })?;
+        }
+    }
+    Ok(())
+}
+
+fn build_mode_bindings(
+    raw: HashMap<String, HashMap<String, String>>,
+) -> Result<HashMap<Mode, HashMap<String, KeyChord>>, String> {
+    let defaults = default_keybindings_string_map();
+    let mut mode_bindings = HashMap::new();
+    let empty_map = HashMap::new();
+
+    for (mode_str, default_actions) in &defaults {
+        let mode = parse_mode(mode_str)?;
+        let mut action_map = HashMap::new();
+
+        let raw_actions = raw.get(mode_str).unwrap_or(&empty_map);
+
+        for (action_id, default_key) in default_actions {
+            let key_str = raw_actions.get(action_id).unwrap_or(default_key);
+            let key_chord = parse_key_chord(key_str)
+                .ok_or_else(|| format!("Invalid key chord: {}", key_str))?;
+            action_map.insert(action_id.clone(), key_chord);
+        }
+
+        mode_bindings.insert(mode, action_map);
+    }
+    Ok(mode_bindings)
 }
 
 pub fn parse_key_chord(s: &str) -> Option<KeyChord> {
