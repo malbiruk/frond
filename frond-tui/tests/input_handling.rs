@@ -3,11 +3,10 @@
 //! These tests verify that user input correctly produces expected actions
 //! and that the input system behaves correctly across different modes.
 
-use frond::app::{EditMode, Mode};
+use frond::app::Mode;
 use frond::config::Config;
 use frond::input::InputHandler;
 use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use uuid::Uuid;
 
 // === Basic Input Handling ===
 
@@ -53,7 +52,7 @@ fn escape_key_produces_action_in_edit_mode() {
     let handler = InputHandler::new(&config);
 
     let escape_key = KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE);
-    let action = handler.handle_input(escape_key, Mode::Edit(EditMode::Append));
+    let action = handler.handle_input(escape_key, Mode::Edit);
 
     assert!(
         action.is_some(),
@@ -71,7 +70,7 @@ fn normal_mode_keys_dont_work_in_edit_mode() {
     // Edit key should work in normal mode with focus, not in edit mode
     let edit_key = KeyEvent::new(KeyCode::Char('e'), KeyModifiers::NONE);
     let normal_action = handler.handle_input(edit_key, Mode::Normal);
-    let _edit_action = handler.handle_input(edit_key, Mode::Edit(EditMode::Append));
+    let _edit_action = handler.handle_input(edit_key, Mode::Edit);
 
     assert!(
         normal_action.is_some(),
@@ -88,7 +87,7 @@ fn edit_mode_keys_dont_work_in_normal_mode() {
 
     let escape_key = KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE);
     let normal_action = handler.handle_input(escape_key, Mode::Normal);
-    let edit_action = handler.handle_input(escape_key, Mode::Edit(EditMode::Append));
+    let edit_action = handler.handle_input(escape_key, Mode::Edit);
 
     assert!(
         normal_action.is_none(),
@@ -236,7 +235,7 @@ fn handler_provides_essential_actions_for_edit_mode() {
     let config = Config::default();
     let handler = InputHandler::new(&config);
 
-    let essentials = handler.get_essential_schemas(Mode::Edit(EditMode::Append));
+    let essentials = handler.get_essential_schemas(Mode::Edit);
 
     assert!(
         !essentials.is_empty(),
@@ -274,22 +273,12 @@ fn handler_consistent_across_calls() {
 fn different_edit_modes_handle_escape_consistently() {
     let config = Config::default();
     let handler = InputHandler::new(&config);
-    let message_id = Uuid::new_v4();
-
     let escape = KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE);
 
-    let append_action = handler.handle_input(escape, Mode::Edit(EditMode::Append));
-    let _edit_action = handler.handle_input(
-        escape,
-        Mode::Edit(EditMode::EditInPlace {
-            message_id,
-            has_messages_below: true,
-        }),
-    );
+    let edit_action = handler.handle_input(escape, Mode::Edit);
 
-    // At least append mode should handle escape consistently
-    assert!(append_action.is_some(), "Append mode should handle escape");
-    // Edit in place mode may or may not have escape mapped - test passes if append works
+    // Edit mode should handle escape consistently
+    assert!(edit_action.is_some(), "Edit mode should handle escape");
 }
 
 // === Error Handling ===

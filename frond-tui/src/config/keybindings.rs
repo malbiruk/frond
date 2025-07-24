@@ -1,4 +1,4 @@
-use crate::app::{EditMode, Mode};
+use crate::app::Mode;
 use crate::input::KeyChord;
 use ratatui::crossterm::event::{KeyCode, KeyModifiers};
 use std::collections::HashMap;
@@ -32,8 +32,7 @@ pub fn default_keybindings_string_map() -> HashMap<String, HashMap<String, Strin
                 ("quit", "q"),
             ][..],
         ),
-        ("edit-append", &[("exit_mode", "esc")]),
-        ("edit-inplace", &[("exit_mode", "esc")]),
+        ("edit", &[("exit_mode", "esc")]),
     ]
     .into_iter()
     .map(|(mode, actions)| {
@@ -178,11 +177,7 @@ pub fn parse_key_chord(s: &str) -> Option<KeyChord> {
 pub fn parse_mode(s: &str) -> Result<Mode, String> {
     match s {
         "normal" => Ok(Mode::Normal),
-        "edit" | "edit-append" => Ok(Mode::Edit(EditMode::Append)),
-        "edit-inplace" => Ok(Mode::Edit(EditMode::EditInPlace {
-            message_id: uuid::Uuid::nil(),
-            has_messages_below: false,
-        })),
+        "edit" => Ok(Mode::Edit),
         _ => Err(format!("Unknown mode: {}", s)),
     }
 }

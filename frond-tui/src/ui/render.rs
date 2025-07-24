@@ -9,7 +9,7 @@ use ratatui::Frame;
 pub fn render(frame: &mut Frame, app_state: &mut AppState) {
     match app_state.mode {
         Mode::Normal => normal_mode::render(frame, app_state),
-        Mode::Edit(_) => edit_mode::render(frame, app_state),
+        Mode::Edit => edit_mode::render(frame, app_state),
     }
 
     if let Some(ref msg) = app_state.error_message {

@@ -4,7 +4,7 @@
 //! and that actions can be resolved from user input.
 
 use frond::actions::{ActionRegistry, UIAction};
-use frond::app::{EditMode, Mode};
+use frond::app::Mode;
 use frond::config::Config;
 use frond::input::InputHandler;
 use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
@@ -27,7 +27,7 @@ fn action_registry_provides_actions_for_normal_mode() {
 #[test]
 fn action_registry_provides_actions_for_edit_mode() {
     let registry = ActionRegistry::new();
-    let actions = registry.get_schemas_for_mode(Mode::Edit(EditMode::Append));
+    let actions = registry.get_schemas_for_mode(Mode::Edit);
 
     let action_ids: Vec<&str> = actions.iter().map(|(id, _)| *id).collect();
     assert!(action_ids.contains(&"exit_mode"));
@@ -41,7 +41,7 @@ fn action_registry_provides_essential_actions() {
     let normal_essentials = registry.get_essential_schemas_for_mode(Mode::Normal);
     assert!(!normal_essentials.is_empty());
 
-    let edit_essentials = registry.get_essential_schemas_for_mode(Mode::Edit(EditMode::Append));
+    let edit_essentials = registry.get_essential_schemas_for_mode(Mode::Edit);
     assert!(!edit_essentials.is_empty());
 }
 
@@ -83,7 +83,7 @@ fn input_handler_produces_exit_action_in_edit_mode() {
     let handler = InputHandler::new(&config);
 
     let escape_key = KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE);
-    let action = handler.handle_input(escape_key, Mode::Edit(EditMode::Append));
+    let action = handler.handle_input(escape_key, Mode::Edit);
 
     assert!(action.is_some());
     match action.unwrap() {
@@ -143,7 +143,7 @@ fn action_registry_mode_isolation() {
     let registry = ActionRegistry::new();
 
     let normal_actions = registry.get_schemas_for_mode(Mode::Normal);
-    let edit_actions = registry.get_schemas_for_mode(Mode::Edit(EditMode::Append));
+    let edit_actions = registry.get_schemas_for_mode(Mode::Edit);
 
     let normal_ids: Vec<&str> = normal_actions.iter().map(|(id, _)| *id).collect();
     let edit_ids: Vec<&str> = edit_actions.iter().map(|(id, _)| *id).collect();

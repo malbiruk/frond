@@ -113,21 +113,17 @@ fn handle_scroll_to_previous_message(state: &mut AppState) {
 
 // Mode transition handlers
 fn handle_enter_edit_mode(state: &mut AppState) {
-    let Some(message_id) = state.focused_message_id else {
+    let Some(_message_id) = state.focused_message_id else {
         state.error_message = Some("No message selected for editing".to_string());
         return;
     };
 
-    let has_messages_below = state.has_messages_after(message_id);
-    state.mode = crate::app::Mode::Edit(crate::app::EditMode::EditInPlace {
-        message_id,
-        has_messages_below,
-    });
+    state.mode = crate::app::Mode::Edit;
 }
 
 fn handle_enter_append_mode(state: &mut AppState) {
-    // Transition to append mode
-    state.mode = crate::app::Mode::Edit(crate::app::EditMode::Append);
+    // Transition to edit mode for appending
+    state.mode = crate::app::Mode::Edit;
 }
 
 fn handle_enter_command_palette(state: &mut AppState) {

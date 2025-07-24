@@ -118,7 +118,7 @@ impl ActionRegistry {
                 "delete_message",
                 "show_help",
             ],
-            Mode::Edit(_) => vec!["exit_mode"],
+            Mode::Edit => vec!["exit_mode"],
         };
 
         essential_order
@@ -141,8 +141,8 @@ fn schema_available_in_mode(schema: &ActionSchema, mode: Mode) -> bool {
         (ActionSchema::Common(_), _) => true,
         // Normal mode actions only in normal mode
         (ActionSchema::Normal(_), Mode::Normal) => true,
-        // Edit mode actions only in edit modes
-        (ActionSchema::Edit(_), Mode::Edit(_)) => true,
+        // Edit mode actions only in edit mode
+        (ActionSchema::Edit(_), Mode::Edit) => true,
         _ => false,
     }
 }

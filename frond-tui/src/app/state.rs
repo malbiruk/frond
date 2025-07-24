@@ -21,16 +21,7 @@ pub enum ScrollingRequest {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Mode {
     Normal,
-    Edit(EditMode),
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum EditMode {
-    EditInPlace {
-        message_id: Uuid,
-        has_messages_below: bool,
-    },
-    Append,
+    Edit,
 }
 
 #[derive(Debug, Default)]

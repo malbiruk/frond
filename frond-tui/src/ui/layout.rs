@@ -13,7 +13,7 @@ impl AppLayout {
     pub fn new(area: Rect, mode: Mode) -> Self {
         match mode {
             Mode::Normal => Self::normal_layout(area),
-            Mode::Edit(_) => Self::edit_layout(area),
+            Mode::Edit => Self::edit_layout(area),
         }
     }
 

@@ -6,7 +6,7 @@
 
 use frond::actions::{CommonAction, EditModeAction, NormalModeAction, UIAction};
 use frond::app::state::ModelInfo;
-use frond::app::{AppState, EditMode, Mode, reducer};
+use frond::app::{AppState, Mode, reducer};
 use frond::config::Config;
 use frond_core::{Branch, Dialogue, Message, Role, Tree};
 
@@ -92,14 +92,11 @@ fn enter_edit_mode_with_valid_message_transitions_correctly() {
     reducer::reduce(&mut state, action);
 
     match state.mode {
-        Mode::Edit(EditMode::EditInPlace {
-            message_id: edit_msg_id,
-            has_messages_below,
-        }) => {
-            assert_eq!(edit_msg_id, message_id);
-            assert!(has_messages_below); // Should be true since we have multiple messages
+        Mode::Edit => {
+            // Edit mode should be active and focused message should match
+            assert_eq!(state.focused_message_id, Some(message_id));
         }
-        _ => panic!("Expected EditInPlace mode"),
+        _ => panic!("Expected Edit mode"),
     }
 
     assert!(state.error_message.is_none());
@@ -135,7 +132,7 @@ fn enter_append_mode_transitions_correctly() {
 
     reducer::reduce(&mut state, action);
 
-    assert_eq!(state.mode, Mode::Edit(EditMode::Append));
+    assert_eq!(state.mode, Mode::Edit);
     assert!(state.error_message.is_none());
 }
 
@@ -145,7 +142,7 @@ fn exit_current_mode_returns_to_normal() {
     let mut state = create_app_state_with_dialogue(dialogue);
 
     // First enter edit mode
-    state.mode = Mode::Edit(EditMode::Append);
+    state.mode = Mode::Edit;
     state.error_message = Some("Test error".to_string());
 
     let action = UIAction::EditMode(EditModeAction::ExitCurrentMode);

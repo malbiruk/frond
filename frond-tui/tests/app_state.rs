@@ -4,7 +4,7 @@
 //! focus management, and state consistency.
 
 use frond::app::state::ModelInfo;
-use frond::app::{AppState, EditMode, Mode};
+use frond::app::{AppState, Mode};
 use frond::config::Config;
 use frond_core::{Branch, Dialogue, Message, Role, Tree};
 use uuid::Uuid;
@@ -263,7 +263,7 @@ fn app_state_mode_transitions_preserve_navigation() {
     let original_message_id = state.focused_message_id;
 
     // Change mode
-    state.mode = Mode::Edit(EditMode::Append);
+    state.mode = Mode::Edit;
 
     // Navigation should be preserved
     assert_eq!(state.current_tree_id, original_tree_id);

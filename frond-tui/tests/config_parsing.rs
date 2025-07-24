@@ -3,7 +3,7 @@
 //! This module provides comprehensive test coverage for the configuration system,
 //! including key parsing, keybinding resolution, theme configuration, and config validation.
 
-use frond::app::{EditMode, Mode};
+use frond::app::Mode;
 use frond::config::{
     Config, Keybindings, Theme, keybindings::parse_key_chord, keybindings::parse_mode,
 };
@@ -11,7 +11,6 @@ use frond::input::KeyChord;
 use ratatui::crossterm::event::{KeyCode, KeyModifiers};
 use ratatui::style::Color;
 use std::collections::HashMap;
-use uuid::Uuid;
 
 // Key Chord Parsing Tests
 
@@ -177,15 +176,7 @@ fn parse_key_chord_handles_edge_cases() {
 fn parse_mode_handles_valid_modes() {
     let test_cases = vec![
         ("normal", Mode::Normal),
-        ("edit", Mode::Edit(EditMode::Append)),
-        ("edit-append", Mode::Edit(EditMode::Append)),
-        (
-            "edit-inplace",
-            Mode::Edit(EditMode::EditInPlace {
-                message_id: Uuid::nil(),
-                has_messages_below: false,
-            }),
-        ),
+        ("edit", Mode::Edit),
     ];
 
     for (input, expected_mode) in test_cases {
@@ -193,15 +184,7 @@ fn parse_mode_handles_valid_modes() {
         assert!(result.is_ok(), "Failed to parse valid mode: {}", input);
 
         let mode = result.unwrap();
-        match (mode, expected_mode) {
-            (Mode::Normal, Mode::Normal) => {} // OK
-            (Mode::Edit(EditMode::Append), Mode::Edit(EditMode::Append)) => {} // OK
-            (
-                Mode::Edit(EditMode::EditInPlace { .. }),
-                Mode::Edit(EditMode::EditInPlace { .. }),
-            ) => {} // OK
-            _ => panic!("Mode mismatch for input: {}", input),
-        }
+        assert_eq!(mode, expected_mode, "Mode mismatch for input: {}", input);
     }
 }
 
@@ -210,7 +193,6 @@ fn parse_mode_handles_invalid_modes() {
     let invalid_modes = vec![
         "",
         "invalid",
-        "edit-invalid",
         "normal-extra",
         "NORMAL", // Case sensitive
     ];
@@ -332,16 +314,8 @@ fn keybindings_from_string_map_handles_invalid_input() {
 fn keybindings_edit_mode_has_exit_mapping() {
     let keybindings = Keybindings::default();
 
-    let edit_append_mode = Mode::Edit(EditMode::Append);
-    let exit_key = keybindings.get_key_for_action(edit_append_mode, "exit_mode");
-    assert!(exit_key.is_some());
-    assert_eq!(exit_key.unwrap().key, KeyCode::Esc);
-
-    let edit_inplace_mode = Mode::Edit(EditMode::EditInPlace {
-        message_id: Uuid::nil(),
-        has_messages_below: false,
-    });
-    let exit_key = keybindings.get_key_for_action(edit_inplace_mode, "exit_mode");
+    let edit_mode = Mode::Edit;
+    let exit_key = keybindings.get_key_for_action(edit_mode, "exit_mode");
     assert!(exit_key.is_some());
     assert_eq!(exit_key.unwrap().key, KeyCode::Esc);
 }
@@ -374,7 +348,7 @@ fn config_get_key_for_action_works_across_modes() {
     assert_eq!(key.unwrap().key, KeyCode::Char('e'));
 
     // Edit mode action
-    let key = config.get_key_for_action(Mode::Edit(EditMode::Append), "exit_mode");
+    let key = config.get_key_for_action(Mode::Edit, "exit_mode");
     assert!(key.is_some());
     assert_eq!(key.unwrap().key, KeyCode::Esc);
 
@@ -456,7 +430,7 @@ fn config_handles_mode_specific_keybindings() {
 
     // Same action ID should work in different modes if bound
     let normal_exit = config.get_key_for_action(Mode::Normal, "quit");
-    let edit_exit = config.get_key_for_action(Mode::Edit(EditMode::Append), "exit_mode");
+    let edit_exit = config.get_key_for_action(Mode::Edit, "exit_mode");
 
     assert!(normal_exit.is_some());
     assert!(edit_exit.is_some());
@@ -471,14 +445,14 @@ fn keybindings_mode_isolation_works() {
     let key = KeyChord::char('t');
     keybindings.set_key_for_action(Mode::Normal, "test_normal".to_string(), key.clone());
     keybindings.set_key_for_action(
-        Mode::Edit(EditMode::Append),
+        Mode::Edit,
         "test_edit".to_string(),
         key.clone(),
     );
 
     // Same key should resolve to different actions in different modes
     let normal_action = keybindings.get_action_for_key(Mode::Normal, &key);
-    let edit_action = keybindings.get_action_for_key(Mode::Edit(EditMode::Append), &key);
+    let edit_action = keybindings.get_action_for_key(Mode::Edit, &key);
 
     assert_eq!(normal_action, Some("test_normal".to_string()));
     assert_eq!(edit_action, Some("test_edit".to_string()));
