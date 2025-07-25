@@ -2,7 +2,7 @@
 - [ ] edit mode
 - [ ] implement hiding messages
 - [ ] add undo/redo
-- [ ] add text search in normal mode
+- [ ] add text search in normal mode (current branch, whole dialogue)
 - [ ] add Normal "submodes": Normal > Message/Branch/Tree/Dialogue
 - [ ] syntax highlighting
 - [ ] copy as text actions: c to copy whole message, shift-c to copy code

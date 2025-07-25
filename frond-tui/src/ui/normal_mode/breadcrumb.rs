@@ -57,7 +57,7 @@ fn breadcrumb_with_branch(app_state: &AppState, dialogue_name: &str) -> String {
     }
 }
 
-fn build_token_info(app_state: &AppState) -> String {
+pub fn build_token_info(app_state: &AppState) -> String {
     let used = format_tokens(app_state.model_info.tokens_used);
     let available = format_tokens(app_state.model_info.tokens_available);
     format!("{}/{}", used, available)

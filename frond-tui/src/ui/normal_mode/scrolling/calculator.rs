@@ -15,7 +15,7 @@ pub fn calculate_total_content_height(messages: &[&Message], viewport_width: u16
 }
 
 fn calculate_content_width(viewport_width: u16) -> usize {
-    viewport_width.saturating_sub(4) as usize
+    viewport_width.saturating_sub(4).max(1) as usize
 }
 
 fn calculate_wrapped_line_count(content: &str, content_width: usize) -> usize {
