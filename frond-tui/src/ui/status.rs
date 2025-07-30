@@ -179,7 +179,19 @@ fn format_key_code(key_code: ratatui::crossterm::event::KeyCode) -> String {
         KeyCode::End => "end".to_string(),
         KeyCode::PageUp => "pgup".to_string(),
         KeyCode::PageDown => "pgdn".to_string(),
-        _ => "?".to_string(),
+        KeyCode::F(12) => "f12".to_string(),
+        KeyCode::F(11) => "f11".to_string(),
+        KeyCode::F(10) => "f10".to_string(),
+        KeyCode::F(9) => "f9".to_string(),
+        KeyCode::F(8) => "f8".to_string(),
+        KeyCode::F(7) => "f7".to_string(),
+        KeyCode::F(6) => "f6".to_string(),
+        KeyCode::F(5) => "f5".to_string(),
+        KeyCode::F(4) => "f4".to_string(),
+        KeyCode::F(3) => "f3".to_string(),
+        KeyCode::F(2) => "f2".to_string(),
+        KeyCode::F(1) => "f1".to_string(),
+        _ => "unknown".to_string(),
     }
 }
 

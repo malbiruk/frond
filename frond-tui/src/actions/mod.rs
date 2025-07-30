@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use strum::IntoEnumIterator;
 
 pub mod common;
-pub mod edit_mode; 
+pub mod edit_mode;
 pub mod macros;
 pub mod normal_mode;
 
@@ -118,7 +118,7 @@ impl ActionRegistry {
                 "delete_message",
                 "show_help",
             ],
-            Mode::Edit => vec!["exit_mode"],
+            Mode::Edit => vec!["show_help", "exit_mode"],
         };
 
         essential_order
