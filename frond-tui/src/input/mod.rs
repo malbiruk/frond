@@ -1,6 +1,5 @@
-use crate::actions::{
-    ActionRegistry, ActionSchema, CommonAction, EditModeAction, UIAction,
-};
+use crate::actions::CommonActionSchema;
+use crate::actions::{ActionRegistry, ActionSchema, CommonAction, UIAction};
 use crate::app::Mode;
 use crate::config::Config;
 use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
@@ -88,7 +87,6 @@ impl InputHandler {
     fn schema_to_action(&self, schema: &ActionSchema, current_mode: &Mode) -> Option<UIAction> {
         match schema {
             ActionSchema::Common(common_schema) => {
-                use crate::actions::CommonActionSchema;
                 let action = match common_schema {
                     CommonActionSchema::Quit => CommonAction::Quit,
                     CommonActionSchema::ShowHelp => CommonAction::ShowHelp(*current_mode),
@@ -100,10 +98,7 @@ impl InputHandler {
                 Some(UIAction::NormalMode(action))
             }
             ActionSchema::Edit(edit_schema) => {
-                use crate::actions::EditModeActionSchema;
-                let action = match edit_schema {
-                    EditModeActionSchema::ExitCurrentMode => EditModeAction::ExitCurrentMode,
-                };
+                let action = edit_schema.to_action();
                 Some(UIAction::EditMode(action))
             }
         }
