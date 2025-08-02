@@ -35,7 +35,7 @@ impl AppLayout {
 
     fn edit_layout(area: Rect) -> Self {
         let chunks = Layout::vertical([
-            Constraint::Length(3), // Breadcrumb
+            Constraint::Length(2), // Breadcrumb (same as normal)
             Constraint::Min(0),    // Content (flexible)
             Constraint::Length(2), // Status
         ])
