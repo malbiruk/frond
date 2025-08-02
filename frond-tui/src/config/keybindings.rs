@@ -32,7 +32,71 @@ pub fn default_keybindings_string_map() -> HashMap<String, HashMap<String, Strin
                 ("quit", "q"),
             ][..],
         ),
-        ("edit", &[("exit_mode", "esc"), ("show_help", "f1")]),
+        (
+            "edit",
+            &[
+                // Mode operations
+                ("exit_mode", "esc"),
+                ("submit_message", "ctrl-enter"),
+                // Character operations
+                ("delete_char", "backspace"),
+                ("delete_next_char", "delete"),
+                ("insert_newline", "enter"),
+                // Line operations
+                ("delete_line_by_end", "alt-k"),
+                ("delete_line_by_head", "alt-u"),
+                // Word operations
+                ("delete_word", "ctrl-w"),
+                ("delete_next_word", "alt-d"),
+                // Undo/Redo
+                ("undo", "ctrl-z"),
+                ("redo", "ctrl-shift-z"),
+                // Clipboard operations
+                ("copy", "ctrl-c"),
+                ("cut", "ctrl-x"),
+                ("paste", "ctrl-v"),
+                // Selection operations
+                ("select_all", "ctrl-a"),
+                // Selection movement - character level
+                ("select_forward", "shift-right"),
+                ("select_back", "shift-left"),
+                ("select_up", "shift-up"),
+                ("select_down", "shift-down"),
+                // Selection movement - word level
+                ("select_word_forward", "ctrl-shift-right"),
+                ("select_word_back", "ctrl-shift-left"),
+                // Selection movement - line boundaries
+                ("select_to_end", "shift-end"),
+                ("select_to_head", "shift-home"),
+                // Cursor movement - character level
+                ("move_cursor_forward", "right"),
+                ("move_cursor_back", "left"),
+                ("move_cursor_up", "up"),
+                ("move_cursor_down", "down"),
+                // Cursor movement - word level
+                ("move_cursor_word_forward", "ctrl-right"),
+                ("move_cursor_word_end", "ctrl-e"),
+                ("move_cursor_word_back", "ctrl-left"),
+                // Cursor movement - paragraph level
+                ("move_cursor_paragraph_forward", "ctrl-down"),
+                ("move_cursor_paragraph_back", "ctrl-up"),
+                // Cursor movement - line boundaries
+                ("move_cursor_end", "end"),
+                ("move_cursor_head", "home"),
+                // Cursor movement - document boundaries
+                ("move_cursor_top", "ctrl-home"),
+                ("move_cursor_bottom", "ctrl-end"),
+                // Cursor movement - viewport
+                ("move_cursor_in_viewport", "f2"),
+                // Scroll operations
+                ("scroll_page_down", "pgdn"),
+                ("scroll_page_up", "pgup"),
+                ("scroll_half_page_down", "ctrl-d"),
+                ("scroll_half_page_up", "ctrl-u"),
+                // Help
+                ("show_help", "f1"),
+            ],
+        ),
     ]
     .into_iter()
     .map(|(mode, actions)| {

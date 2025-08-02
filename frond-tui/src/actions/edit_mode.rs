@@ -15,7 +15,7 @@ define_actions! {
         },
         InsertNewline {
             id: "insert_newline",
-            name: "insert newline",
+            name: "newline",
             description: "insert newline",
         },
 
