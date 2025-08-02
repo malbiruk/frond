@@ -63,6 +63,7 @@ fn create_app_state_with_dialogue(dialogue: Dialogue) -> AppState {
         scrollbar_state: ratatui::widgets::ScrollbarState::default(),
         pending_scrolling_request: None,
         error_message: None,
+        edit_textarea: None,
     }
 }
 
@@ -286,6 +287,7 @@ fn app_state_handles_empty_dialogue() {
         scrollbar_state: ratatui::widgets::ScrollbarState::default(),
         pending_scrolling_request: None,
         error_message: None,
+        edit_textarea: None,
     };
 
     // Should handle empty dialogue gracefully

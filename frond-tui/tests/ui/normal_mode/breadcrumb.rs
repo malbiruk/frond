@@ -50,6 +50,7 @@ fn create_test_app_state_with_tokens(used: u32, available: u32) -> AppState {
         scrollbar_state: ratatui::widgets::ScrollbarState::default(),
         pending_scrolling_request: None,
         error_message: None,
+        edit_textarea: None,
     }
 }
 

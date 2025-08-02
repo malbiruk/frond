@@ -3,6 +3,7 @@ use crate::config::Config;
 use crate::ui::normal_mode::scrolling;
 use frond_core::Dialogue;
 use ratatui::widgets::ScrollbarState;
+use tui_textarea::TextArea;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -49,6 +50,9 @@ pub struct AppState {
 
     // Error state
     pub error_message: Option<String>,
+
+    // Edit mode state
+    pub edit_textarea: Option<TextArea<'static>>,
 }
 
 impl Default for AppState {
@@ -76,6 +80,7 @@ impl Default for AppState {
             scrollbar_state: ScrollbarState::default(),
             pending_scrolling_request: None,
             error_message: None,
+            edit_textarea: None,
         };
 
         // Request focus on last message if available

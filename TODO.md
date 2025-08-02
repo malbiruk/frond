@@ -1,5 +1,5 @@
 ### closest goals
-- [ ] edit mode
+- [ ] edit mode (content.rs + tests)
 - [ ] implement hiding messages
 - [ ] add undo/redo
 - [ ] add text search in normal mode (current branch, whole dialogue)
