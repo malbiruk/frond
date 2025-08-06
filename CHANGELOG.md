@@ -6,6 +6,10 @@ All notable changes to Frond will be documented in this file.
 
 ### frond-tui
 
+#### 2025-08-06
+- Added syntax highlighting for markdown message content using bat crate
+- Added smart focus behavior for large messages (show beginning/end instead of centering)
+
 #### 2025-07-22
 - Added error popup with Esc to dismiss
 - Added scroll to next/previous message functionality
