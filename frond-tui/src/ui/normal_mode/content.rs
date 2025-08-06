@@ -37,15 +37,18 @@ fn render_messages_with_scroll(
     let content_area = calculate_content_area(area);
     let mut y_offset = calculate_initial_y_offset(content_area, app_state.scroll_offset);
 
-    // Step 1: Extract message IDs to avoid borrowing conflicts
-    let message_ids: Vec<uuid::Uuid> = app_state.current_messages()
+    // Step 1: Extract message data with visibility info to avoid borrowing conflicts
+    let message_data: Vec<(uuid::Uuid, bool)> = app_state.current_messages()
         .into_iter()
-        .map(|msg| msg.id())
+        .map(|msg| {
+            let is_visible = should_render_message(y_offset + calculate_message_heights_before(app_state, msg.id(), viewport_width), content_area, msg, viewport_width);
+            (msg.id(), is_visible)
+        })
         .collect();
 
-    // Step 2: Populate cache for missing messages (mutable borrow)
-    for &message_id in &message_ids {
-        if !app_state.highlight_cache.contains_key(&message_id) {
+    // Step 2: Populate cache only for visible messages (mutable borrow)
+    for &(message_id, is_visible) in &message_data {
+        if is_visible && !app_state.highlight_cache.contains_key(&message_id) {
             if let Some(branch) = app_state.current_branch() {
                 if let Some(message) = branch.get_message_by_id(message_id) {
                     let highlighted_text = crate::ui::normal_mode::highlighting::highlight_markdown(message.content());
@@ -56,7 +59,8 @@ fn render_messages_with_scroll(
     }
 
     // Step 3: Render with cached data (immutable borrow)
-    for message_id in message_ids {
+    y_offset = calculate_initial_y_offset(content_area, app_state.scroll_offset);
+    for (message_id, _) in message_data {
         let message = if let Some(branch) = app_state.current_branch() {
             branch.get_message_by_id(message_id)
         } else {
@@ -281,6 +285,24 @@ fn calculate_message_height_for_rendering(
     scrolling::calculate_message_display_height(message, viewport_width)
 }
 
+fn calculate_message_heights_before(
+    app_state: &AppState,
+    target_message_id: uuid::Uuid,
+    viewport_width: u16,
+) -> isize {
+    let mut total_height = 0isize;
+    let messages = app_state.current_messages();
+    
+    for message in messages {
+        if message.id() == target_message_id {
+            break;
+        }
+        total_height += calculate_message_height_for_rendering(message, viewport_width) as isize;
+    }
+    
+    total_height
+}
+
 fn render_empty_message(frame: &mut Frame, area: Rect) {
     let empty_msg = Paragraph::new("No messages in this branch")
         .alignment(Alignment::Center)
@@ -367,11 +389,11 @@ fn create_message_widget(
 ) -> Paragraph<'static> {
     let is_focused = app_state.focused_message_id == Some(message.id());
     
-    // Use cached highlighting (should always be available now)
+    // Use cached highlighting if available, otherwise plain text
     let text = app_state.highlight_cache.get(&message.id())
         .cloned()
         .unwrap_or_else(|| {
-            // Fallback to plain text if somehow missing from cache
+            // Plain text fallback for non-visible messages or cache misses
             ratatui::text::Text::raw(message.content().to_string())
         });
     
