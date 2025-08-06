@@ -3,6 +3,7 @@ use crate::config::Config;
 use crate::ui::normal_mode::scrolling;
 use frond_core::Dialogue;
 use ratatui::widgets::ScrollbarState;
+use std::collections::HashMap;
 use tui_textarea::TextArea;
 use uuid::Uuid;
 
@@ -53,6 +54,9 @@ pub struct AppState {
 
     // Edit mode state
     pub edit_textarea: Option<TextArea<'static>>,
+
+    // Syntax highlighting cache
+    pub highlight_cache: HashMap<Uuid, ratatui::text::Text<'static>>,
 }
 
 impl Default for AppState {
@@ -81,6 +85,7 @@ impl Default for AppState {
             pending_scrolling_request: None,
             error_message: None,
             edit_textarea: None,
+            highlight_cache: HashMap::new(),
         };
 
         // Request focus on last message if available
@@ -177,5 +182,27 @@ impl AppState {
 
     pub fn clear_error(&mut self) {
         self.error_message = None;
+    }
+
+    pub fn get_highlighted_text(&mut self, message: &frond_core::Message) -> ratatui::text::Text<'static> {
+        let message_id = message.id();
+        
+        // Check cache first
+        if let Some(cached_text) = self.highlight_cache.get(&message_id) {
+            return cached_text.clone();
+        }
+        
+        // Cache miss - highlight and cache
+        let highlighted_text = crate::ui::normal_mode::highlighting::highlight_markdown(message.content());
+        self.highlight_cache.insert(message_id, highlighted_text.clone());
+        highlighted_text
+    }
+
+    pub fn invalidate_message_highlight(&mut self, message_id: Uuid) {
+        self.highlight_cache.remove(&message_id);
+    }
+
+    pub fn clear_highlight_cache(&mut self) {
+        self.highlight_cache.clear();
     }
 }

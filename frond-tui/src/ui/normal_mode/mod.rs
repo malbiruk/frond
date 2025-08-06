@@ -6,6 +6,7 @@ use super::status;
 
 pub mod breadcrumb;
 pub mod content;
+pub mod highlighting;
 pub mod scrolling;
 
 pub fn render(frame: &mut Frame, app_state: &mut AppState) {

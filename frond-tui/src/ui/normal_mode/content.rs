@@ -14,15 +14,67 @@ pub fn render(frame: &mut Frame, area: Rect, app_state: &mut AppState) {
     resolve_pending_focus_request(app_state, viewport_height, viewport_width);
     update_focus_and_scroll_state(app_state, viewport_height, viewport_width);
 
-    let messages = app_state.current_messages();
+    // Check if we have messages
+    let has_messages = app_state.current_branch()
+        .map(|b| !b.messages().is_empty())
+        .unwrap_or(false);
 
-    if messages.is_empty() {
+    if !has_messages {
         render_empty_message(frame, area);
         return;
     }
 
-    render_messages_with_scroll(frame, area, messages, app_state, viewport_width);
+    render_messages_with_scroll(frame, area, app_state, viewport_width);
     render_scrollbar(frame, area, app_state);
+}
+
+fn render_messages_with_scroll(
+    frame: &mut Frame,
+    area: Rect,
+    app_state: &mut AppState,
+    viewport_width: u16,
+) {
+    let content_area = calculate_content_area(area);
+    let mut y_offset = calculate_initial_y_offset(content_area, app_state.scroll_offset);
+
+    // Step 1: Extract message IDs to avoid borrowing conflicts
+    let message_ids: Vec<uuid::Uuid> = app_state.current_messages()
+        .into_iter()
+        .map(|msg| msg.id())
+        .collect();
+
+    // Step 2: Populate cache for missing messages (mutable borrow)
+    for &message_id in &message_ids {
+        if !app_state.highlight_cache.contains_key(&message_id) {
+            if let Some(branch) = app_state.current_branch() {
+                if let Some(message) = branch.get_message_by_id(message_id) {
+                    let highlighted_text = crate::ui::normal_mode::highlighting::highlight_markdown(message.content());
+                    app_state.highlight_cache.insert(message_id, highlighted_text);
+                }
+            }
+        }
+    }
+
+    // Step 3: Render with cached data (immutable borrow)
+    for message_id in message_ids {
+        let message = if let Some(branch) = app_state.current_branch() {
+            branch.get_message_by_id(message_id)
+        } else {
+            break;
+        };
+
+        if let Some(message) = message {
+            if should_render_message(y_offset, content_area, message, viewport_width) {
+                render_single_message(frame, content_area, message, app_state, y_offset);
+            }
+
+            y_offset += calculate_message_height_for_rendering(message, viewport_width) as isize;
+
+            if is_below_viewport(y_offset, content_area) {
+                break;
+            }
+        }
+    }
 }
 
 fn resolve_pending_focus_request(
@@ -236,28 +288,6 @@ fn render_empty_message(frame: &mut Frame, area: Rect) {
     frame.render_widget(empty_msg, area);
 }
 
-fn render_messages_with_scroll(
-    frame: &mut Frame,
-    area: Rect,
-    messages: Vec<&frond_core::Message>,
-    app_state: &AppState,
-    viewport_width: u16,
-) {
-    let content_area = calculate_content_area(area);
-    let mut y_offset = calculate_initial_y_offset(content_area, app_state.scroll_offset);
-
-    for message in &messages {
-        if should_render_message(y_offset, content_area, message, viewport_width) {
-            render_single_message(frame, content_area, message, app_state, y_offset);
-        }
-
-        y_offset += calculate_message_height_for_rendering(message, viewport_width) as isize;
-
-        if is_below_viewport(y_offset, content_area) {
-            break;
-        }
-    }
-}
 
 fn calculate_content_area(area: Rect) -> Rect {
     Rect {
@@ -336,8 +366,16 @@ fn create_message_widget(
     content_area: Rect,
 ) -> Paragraph<'static> {
     let is_focused = app_state.focused_message_id == Some(message.id());
+    
+    // Use cached highlighting (should always be available now)
+    let text = app_state.highlight_cache.get(&message.id())
+        .cloned()
+        .unwrap_or_else(|| {
+            // Fallback to plain text if somehow missing from cache
+            ratatui::text::Text::raw(message.content().to_string())
+        });
+    
     let theme = get_message_theme(message, app_state);
-
     let block = create_message_block(app_state, theme, is_focused);
     let scroll_offset = calculate_message_scroll_offset(y_offset, content_area);
 
@@ -347,7 +385,7 @@ fn create_message_widget(
         theme.text_color
     };
 
-    Paragraph::new(message.content().to_string())
+    Paragraph::new(text)
         .block(block)
         .style(Style::default().fg(text_color))
         .wrap(Wrap { trim: false })
