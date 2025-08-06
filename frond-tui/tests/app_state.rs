@@ -64,6 +64,7 @@ fn create_app_state_with_dialogue(dialogue: Dialogue) -> AppState {
         pending_scrolling_request: None,
         error_message: None,
         edit_textarea: None,
+        highlight_cache: std::collections::HashMap::new(),
     }
 }
 
@@ -288,6 +289,7 @@ fn app_state_handles_empty_dialogue() {
         pending_scrolling_request: None,
         error_message: None,
         edit_textarea: None,
+        highlight_cache: std::collections::HashMap::new(),
     };
 
     // Should handle empty dialogue gracefully
