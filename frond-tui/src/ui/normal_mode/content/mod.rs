@@ -3,7 +3,7 @@
 //! Main orchestration module that coordinates focus resolution, message rendering,
 //! and UI state updates.
 
-mod focus_resolver;
+pub mod focus_resolver;
 mod layout_calc;
 mod message_renderer;
 mod widget_factory;
