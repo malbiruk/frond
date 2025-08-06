@@ -50,7 +50,7 @@ pub fn default_keybindings_string_map() -> HashMap<String, HashMap<String, Strin
                 ("delete_next_word", "alt-d"),
                 // Undo/Redo
                 ("undo", "ctrl-z"),
-                ("redo", "ctrl-shift-z"),
+                ("redo", "ctrl-Z"),
                 // Clipboard operations
                 ("copy", "ctrl-c"),
                 ("cut", "ctrl-x"),
@@ -88,11 +88,6 @@ pub fn default_keybindings_string_map() -> HashMap<String, HashMap<String, Strin
                 ("move_cursor_bottom", "ctrl-end"),
                 // Cursor movement - viewport
                 ("move_cursor_in_viewport", "f2"),
-                // Scroll operations
-                ("scroll_page_down", "pgdn"),
-                ("scroll_page_up", "pgup"),
-                ("scroll_half_page_down", "ctrl-d"),
-                ("scroll_half_page_up", "ctrl-u"),
                 // Help
                 ("show_help", "f1"),
             ],

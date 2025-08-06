@@ -7,7 +7,7 @@ edition = "2024"
 readme = "README.md"
 
 [dependencies]
-ratatui = { version = "0.29.0", features = ["all-widgets"] }
+ratatui = { version = "0.29.0", features = ["all-widgets", "unstable-rendered-line-info"] }
 frond-core = { path = "../frond-core" }
 color-eyre = "0.6.5"
 uuid = "1.17.0"

@@ -207,28 +207,6 @@ define_actions! {
             description: "move cursor to stay in the viewport",
         },
 
-        // Scroll operations
-        ScrollPageDown {
-            id: "scroll_page_down",
-            name: "scroll page down",
-            description: "scroll down the viewport by page",
-        },
-        ScrollPageUp {
-            id: "scroll_page_up",
-            name: "scroll page up",
-            description: "scroll up the viewport by page",
-        },
-        ScrollHalfPageDown {
-            id: "scroll_half_page_down",
-            name: "scroll half page down",
-            description: "scroll down the viewport by half-page",
-        },
-        ScrollHalfPageUp {
-            id: "scroll_half_page_up",
-            name: "scroll half page up",
-            description: "scroll up the viewport by half-page",
-        },
-
         // Mode operations
         ExitCurrentMode {
             id: "exit_mode",
