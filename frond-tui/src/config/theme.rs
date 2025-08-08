@@ -37,66 +37,18 @@ pub fn parse_border_type(s: &str) -> Option<BorderType> {
 
 #[derive(Debug, Clone)]
 pub struct Theme {
-    pub assistant: MessageTheme,
-    pub user: MessageTheme,
-    pub focused: FocusedTheme,
-    pub help: Help,
-}
-
-#[derive(Debug, Clone)]
-pub struct MessageTheme {
-    pub frame_color: Color,
-    pub title_color: Color,
-    pub text_color: Color,
-    pub border_type: BorderType,
-    pub display_name: String,
-}
-
-#[derive(Debug, Clone)]
-pub struct FocusedTheme {
-    pub frame_color: Color,
-    pub border_type: BorderType,
-    pub text_color: Color,
-}
-
-#[derive(Debug, Clone)]
-pub struct Help {
-    pub key_color: Color,
-    pub text_color: Color,
+    pub highlight_color: Color,
+    pub secondary_color: Color,
 }
 
 pub fn default_theme_string_map() -> HashMap<String, HashMap<String, String>> {
-    [
-        (
-            "assistant",
-            &[
-                ("frame_color", "blue"),
-                ("title_color", "blue"),
-                ("text_color", "white"),
-                ("border_type", "plain"),
-                ("display_name", "Assistant"),
-            ][..],
-        ),
-        (
-            "user",
-            &[
-                ("frame_color", "dark_gray"),
-                ("title_color", "white"),
-                ("text_color", "white"),
-                ("border_type", "plain"),
-                ("display_name", "User"),
-            ],
-        ),
-        (
-            "focused",
-            &[
-                ("frame_color", "white"),
-                ("border_type", "double"),
-                ("text_color", "white"),
-            ],
-        ),
-        ("help", &[("key_color", "blue"), ("text_color", "white")]),
-    ]
+    [(
+        "theme",
+        &[
+            ("highlight_color", "blue"),
+            ("secondary_color", "dark_gray"),
+        ][..],
+    )]
     .into_iter()
     .map(|(section, fields)| {
         (
@@ -113,96 +65,17 @@ pub fn default_theme_string_map() -> HashMap<String, HashMap<String, String>> {
 impl Theme {
     pub fn from_string_map(raw: HashMap<String, HashMap<String, String>>) -> Result<Self, String> {
         let defaults = default_theme_string_map();
+        let theme_section = raw.get("theme").or_else(|| defaults.get("theme")).unwrap();
 
-        let get_section = |section: &str| raw.get(section).or_else(|| defaults.get(section));
-
-        let assistant = MessageTheme::from_string_map(
-            get_section("assistant").unwrap_or(&HashMap::new()),
-            defaults.get("assistant").unwrap(),
-        )?;
-        let user = MessageTheme::from_string_map(
-            get_section("user").unwrap_or(&HashMap::new()),
-            defaults.get("user").unwrap(),
-        )?;
-        let focused = FocusedTheme::from_string_map(
-            get_section("focused").unwrap_or(&HashMap::new()),
-            defaults.get("focused").unwrap(),
-        )?;
-
-        let help = Help::from_string_map(
-            get_section("help").unwrap_or(&HashMap::new()),
-            defaults.get("help").unwrap(),
-        )?;
+        let get = |k: &str| theme_section.get(k).cloned();
 
         Ok(Self {
-            assistant,
-            user,
-            focused,
-            help,
-        })
-    }
-}
-
-impl MessageTheme {
-    pub fn from_string_map(
-        raw: &HashMap<String, String>,
-        defaults: &HashMap<String, String>,
-    ) -> Result<Self, String> {
-        let get = |k: &str| raw.get(k).or_else(|| defaults.get(k)).cloned();
-
-        Ok(Self {
-            frame_color: get("frame_color")
+            highlight_color: get("highlight_color")
                 .and_then(|s| parse_color(&s))
                 .unwrap_or(Color::Blue),
-            title_color: get("title_color")
+            secondary_color: get("secondary_color")
                 .and_then(|s| parse_color(&s))
-                .unwrap_or(Color::Blue),
-            text_color: get("text_color")
-                .and_then(|s| parse_color(&s))
-                .unwrap_or(Color::White),
-            border_type: get("border_type")
-                .and_then(|s| parse_border_type(&s))
-                .unwrap_or(BorderType::Plain),
-            display_name: get("display_name").unwrap_or_else(|| "Assistant".to_string()),
-        })
-    }
-}
-
-impl FocusedTheme {
-    pub fn from_string_map(
-        raw: &HashMap<String, String>,
-        defaults: &HashMap<String, String>,
-    ) -> Result<Self, String> {
-        let get = |k: &str| raw.get(k).or_else(|| defaults.get(k)).cloned();
-
-        Ok(Self {
-            frame_color: get("frame_color")
-                .and_then(|s| parse_color(&s))
-                .unwrap_or(Color::White),
-            border_type: get("border_type")
-                .and_then(|s| parse_border_type(&s))
-                .unwrap_or(BorderType::Double),
-            text_color: get("text_color")
-                .and_then(|s| parse_color(&s))
-                .unwrap_or(Color::White),
-        })
-    }
-}
-
-impl Help {
-    pub fn from_string_map(
-        raw: &HashMap<String, String>,
-        defaults: &HashMap<String, String>,
-    ) -> Result<Self, String> {
-        let get = |k: &str| raw.get(k).or_else(|| defaults.get(k)).cloned();
-
-        Ok(Self {
-            key_color: get("key_color")
-                .and_then(|s| parse_color(&s))
-                .unwrap_or(Color::Blue),
-            text_color: get("text_color")
-                .and_then(|s| parse_color(&s))
-                .unwrap_or(Color::White),
+                .unwrap_or(Color::DarkGray),
         })
     }
 }

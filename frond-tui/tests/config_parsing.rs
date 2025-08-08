@@ -327,8 +327,8 @@ fn config_default_creates_valid_configuration() {
     let config = Config::default();
 
     // Should have theme
-    assert_eq!(config.theme.assistant.display_name, "Assistant");
-    assert_eq!(config.theme.user.display_name, "User");
+    assert_eq!(config.theme.highlight_color, Color::Blue);
+    assert_eq!(config.theme.secondary_color, Color::DarkGray);
 
     // Should have keybindings
     assert!(config.keybindings.mode_bindings.contains_key(&Mode::Normal));
@@ -374,37 +374,18 @@ fn config_set_key_for_action_updates_keybindings() {
 fn theme_default_has_valid_colors() {
     let theme = Theme::default();
 
-    // Assistant theme
-    assert_eq!(theme.assistant.frame_color, Color::Blue);
-    assert_eq!(theme.assistant.title_color, Color::Blue);
-    assert_eq!(theme.assistant.text_color, Color::White);
-    assert_eq!(theme.assistant.display_name, "Assistant");
-
-    // User theme
-    assert_eq!(theme.user.frame_color, Color::DarkGray);
-    assert_eq!(theme.user.title_color, Color::White);
-    assert_eq!(theme.user.text_color, Color::White);
-    assert_eq!(theme.user.display_name, "User");
-
-    // Help color
-    assert_eq!(theme.help.key_color, Color::Blue);
+    // Theme colors
+    assert_eq!(theme.highlight_color, Color::Blue);
+    assert_eq!(theme.secondary_color, Color::DarkGray);
 }
 
 #[test]
-fn message_theme_contains_required_fields() {
+fn theme_contains_required_fields() {
     let theme = Theme::default();
 
-    // Test that all required fields are present and non-empty
-    assert!(!theme.assistant.display_name.is_empty());
-    assert!(!theme.user.display_name.is_empty());
-
     // Test that colors are valid (not testing specific values, just that they exist)
-    let _assistant_frame = theme.assistant.frame_color;
-    let _assistant_title = theme.assistant.title_color;
-    let _assistant_text = theme.assistant.text_color;
-    let _user_frame = theme.user.frame_color;
-    let _user_title = theme.user.title_color;
-    let _user_text = theme.user.text_color;
+    let _highlight = theme.highlight_color;
+    let _secondary = theme.secondary_color;
 }
 
 // Error Handling and Edge Cases

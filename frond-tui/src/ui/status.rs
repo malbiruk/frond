@@ -1,7 +1,7 @@
 use crate::app::AppState;
 use crate::input::InputHandler;
 use ratatui::prelude::Alignment;
-use ratatui::style::Style;
+use ratatui::style::{Color, Style};
 use ratatui::text::Line;
 use ratatui::text::Span;
 use ratatui::widgets::Block;
@@ -75,11 +75,11 @@ fn create_error_help_line(app_state: &AppState) -> Line<'static> {
     Line::from(vec![
         Span::styled(
             "esc",
-            Style::default().fg(app_state.config.theme.help.key_color),
+            Style::default().fg(app_state.config.theme.highlight_color),
         ),
         Span::styled(
             ": dismiss",
-            Style::default().fg(app_state.config.theme.help.text_color),
+            Style::default().fg(Color::Reset),
         ),
     ])
 }
@@ -128,11 +128,11 @@ fn create_action_spans(
     Some(vec![
         Span::styled(
             key_display,
-            Style::default().fg(app_state.config.theme.help.key_color),
+            Style::default().fg(app_state.config.theme.highlight_color),
         ),
         Span::styled(
             format!(": {}  ", schema.name()),
-            Style::default().fg(app_state.config.theme.help.text_color),
+            Style::default().fg(Color::Reset),
         ),
     ])
 }

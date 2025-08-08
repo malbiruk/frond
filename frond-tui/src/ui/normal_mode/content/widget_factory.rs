@@ -6,8 +6,8 @@ use super::layout_calc;
 use crate::app::AppState;
 use ratatui::layout::Rect;
 use ratatui::prelude::Alignment;
-use ratatui::style::Style;
-use ratatui::widgets::{Block, Paragraph, Scrollbar, ScrollbarOrientation, Wrap};
+use ratatui::style::{Color, Style};
+use ratatui::widgets::{Block, BorderType, Paragraph, Scrollbar, ScrollbarOrientation, Wrap};
 use ratatui::Frame;
 
 /// Create a complete message widget with highlighting, styling, and scrolling
@@ -27,15 +27,10 @@ pub fn create_message_widget(
             ratatui::text::Text::raw(message.content().to_string())
         });
     
-    let theme = get_message_theme(message, app_state);
-    let block = create_message_block(app_state, theme, is_focused);
+    let block = create_message_block(message, app_state, is_focused);
     let scroll_offset = layout_calc::calculate_message_scroll_offset(y_offset, content_area);
 
-    let text_color = if is_focused {
-        app_state.config.theme.focused.text_color
-    } else {
-        theme.text_color
-    };
+    let text_color = Color::Reset;
 
     Paragraph::new(text)
         .block(block)
@@ -46,35 +41,43 @@ pub fn create_message_widget(
 
 /// Create a message block with title and appropriate styling
 pub fn create_message_block(
+    message: &frond_core::Message,
     app_state: &AppState,
-    theme: &crate::config::theme::MessageTheme,
     is_focused: bool,
 ) -> Block<'static> {
-    let title = format!(" {} ", theme.display_name);
+    let (display_name, title_color) = match message.role() {
+        frond_core::Role::Assistant => ("Assistant", app_state.config.theme.highlight_color),
+        frond_core::Role::User => ("User", Color::Reset),
+    };
+    let title = format!(" {} ", display_name);
     let base_block = Block::bordered()
         .title(title)
         .title_alignment(Alignment::Left)
-        .title_style(Style::default().fg(theme.title_color));
+        .title_style(Style::default().fg(title_color));
 
-    apply_focus_styling(app_state, base_block, theme, is_focused)
+    apply_focus_styling(message, app_state, base_block, is_focused)
 }
 
 /// Apply focus-specific styling to a block
 pub fn apply_focus_styling(
+    message: &frond_core::Message,
     app_state: &AppState,
     block: Block<'static>,
-    theme: &crate::config::theme::MessageTheme,
     is_focused: bool,
 ) -> Block<'static> {
+    let border_color = match message.role() {
+        frond_core::Role::Assistant => app_state.config.theme.highlight_color,
+        frond_core::Role::User => Color::Reset,
+    };
+    
     if is_focused {
-        let focused = &app_state.config.theme.focused;
         block
-            .border_type(focused.border_type)
-            .style(Style::default().fg(focused.frame_color))
+            .border_type(BorderType::Double)
+            .style(Style::default().fg(border_color))
     } else {
         block
-            .border_type(theme.border_type)
-            .style(Style::default().fg(theme.frame_color))
+            .border_type(BorderType::Plain)
+            .style(Style::default().fg(border_color))
     }
 }
 
@@ -100,13 +103,3 @@ pub fn render_empty_message(frame: &mut Frame, area: Rect) {
     frame.render_widget(empty_msg, area);
 }
 
-/// Get the theme for a message based on its role
-pub fn get_message_theme<'a>(
-    message: &frond_core::Message,
-    app_state: &'a AppState,
-) -> &'a crate::config::theme::MessageTheme {
-    match message.role() {
-        frond_core::Role::Assistant => &app_state.config.theme.assistant,
-        frond_core::Role::User => &app_state.config.theme.user,
-    }
-}
