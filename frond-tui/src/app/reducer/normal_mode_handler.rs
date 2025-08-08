@@ -14,12 +14,8 @@ pub fn handle_normal_mode_action(state: &mut AppState, action: NormalModeAction)
         NormalModeAction::ScrollPageDown => handle_scroll_page_down(state),
         NormalModeAction::ScrollToTop => handle_scroll_to_top(state),
         NormalModeAction::ScrollToBottom => handle_scroll_to_bottom(state),
-        NormalModeAction::ScrollToNextMessage => {
-            handle_scroll_to_next_message(state)
-        }
-        NormalModeAction::ScrollToPreviousMessage => {
-            handle_scroll_to_previous_message(state)
-        }
+        NormalModeAction::ScrollToNextMessage => handle_scroll_to_next_message(state),
+        NormalModeAction::ScrollToPreviousMessage => handle_scroll_to_previous_message(state),
 
         // Mode transitions
         NormalModeAction::EnterEditMode => handle_enter_edit_mode(state),
@@ -130,7 +126,36 @@ fn handle_enter_append_mode(state: &mut AppState) {
         return;
     };
 
-    // Create a new empty message at the end of the branch using the action system
+    // Check if the last message is a User message - if so, continue editing it
+    let should_continue_editing = state
+        .current_branch()
+        .and_then(|branch| branch.messages().iter().last())
+        .and_then(|last_message| {
+            if *last_message.role() == frond_core::Role::User {
+                Some((last_message.id(), last_message.content().to_string()))
+            } else {
+                None
+            }
+        });
+
+    if let Some((message_id, content)) = should_continue_editing {
+        // Continue editing the existing last user message
+        state.focused_message_id = Some(message_id);
+
+        // Initialize TextArea immediately for append mode
+        let mut textarea = tui_textarea::TextArea::default();
+        textarea.insert_str(&content);
+        textarea.move_cursor(tui_textarea::CursorMove::Bottom);
+        textarea.move_cursor(tui_textarea::CursorMove::End);
+        state.edit_textarea = Some(textarea);
+
+        state.mode = crate::app::Mode::Edit;
+        // Scroll to bottom to show the message being edited
+        state.pending_scrolling_request = Some(crate::app::state::ScrollingRequest::ScrollToBottom);
+        return;
+    }
+
+    // Otherwise create a new empty User message
     match DialogueService::append_message(&mut state.dialogue, branch_id, "".to_string()) {
         Ok(()) => {
             // Get the last message (the one we just created) and focus it
@@ -138,15 +163,22 @@ fn handle_enter_append_mode(state: &mut AppState) {
                 if let Some(last_message) = branch.messages().iter().last() {
                     let new_message_id = last_message.id();
                     state.focused_message_id = Some(new_message_id);
-                    
-                    // Just switch to edit mode - the textarea will be initialized during rendering
+
+                    // Initialize empty TextArea immediately for append mode
+                    let textarea = tui_textarea::TextArea::from(vec![""]); // Start with one empty line
+                    state.edit_textarea = Some(textarea);
+
+                    // Switch to edit mode and scroll to bottom
                     state.mode = crate::app::Mode::Edit;
-                    // TextArea will be initialized in edit_mode::content::render with proper viewport width
+                    state.pending_scrolling_request =
+                        Some(crate::app::state::ScrollingRequest::ScrollToBottom);
                 } else {
-                    state.error_message = Some("Failed to find the newly created message".to_string());
+                    state.error_message =
+                        Some("Failed to find the newly created message".to_string());
                 }
             } else {
-                state.error_message = Some("Branch no longer exists after creating message".to_string());
+                state.error_message =
+                    Some("Branch no longer exists after creating message".to_string());
             }
         }
         Err(e) => {
@@ -329,5 +361,3 @@ fn handle_prev_tree(state: &mut AppState) {
         }
     }
 }
-
-

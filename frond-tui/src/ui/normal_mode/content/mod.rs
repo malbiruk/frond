@@ -4,9 +4,9 @@
 //! and UI state updates.
 
 pub mod focus_resolver;
-mod layout_calc;
-mod message_renderer;
-mod widget_factory;
+pub mod layout_calc;
+pub mod message_renderer;
+pub mod widget_factory;
 
 use crate::app::AppState;
 use crate::ui::normal_mode::scrolling;

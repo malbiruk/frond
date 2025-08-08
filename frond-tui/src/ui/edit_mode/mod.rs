@@ -1,4 +1,4 @@
-mod content;
+pub mod content;
 
 use crate::app::AppState;
 use ratatui::Frame;

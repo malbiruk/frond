@@ -68,6 +68,16 @@ pub fn handle_edit_mode_action(state: &mut AppState, action: EditModeAction) {
 }
 
 fn handle_exit_current_mode(state: &mut AppState) {
+    // Check if we're in append mode before processing (editing last User message)
+    let is_append_mode = if let Some(message_id) = state.focused_message_id {
+        state.current_branch()
+            .and_then(|branch| branch.messages().iter().last())
+            .map(|last| last.id() == message_id && *last.role() == frond_core::Role::User)
+            .unwrap_or(false)
+    } else {
+        false
+    };
+    
     if let (Some(textarea), Some(message_id), Some(branch_id)) = (
         &state.edit_textarea,
         state.focused_message_id,
@@ -99,9 +109,9 @@ fn handle_exit_current_mode(state: &mut AppState) {
             }
         }
         
-        let trimmed_content = content.trim();
+        let content = content.trim().to_string();
 
-        if trimmed_content.is_empty() {
+        if content.is_empty() {
             if let Err(e) =
                 DialogueService::delete_message(&mut state.dialogue, message_id, branch_id)
             {
@@ -127,6 +137,17 @@ fn handle_exit_current_mode(state: &mut AppState) {
     state.mode = Mode::Normal;
     state.error_message = None;
     state.edit_textarea = None;
+    
+    if is_append_mode {
+        // Scroll to the last message after exiting append mode
+        // This centers the lower part of the message if it's big
+        state.pending_scrolling_request = Some(crate::app::state::ScrollingRequest::ScrollToLastMessage);
+    } else {
+        // For regular edit mode, focus the just edited message
+        if let Some(message_id) = state.focused_message_id {
+            state.pending_scrolling_request = Some(crate::app::state::ScrollingRequest::ScrollToMessage(message_id));
+        }
+    }
 }
 
 fn handle_submit_message(state: &mut AppState) {
