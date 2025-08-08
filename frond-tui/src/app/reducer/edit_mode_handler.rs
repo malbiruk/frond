@@ -3,6 +3,14 @@ use crate::app::Mode;
 use crate::app::state::AppState;
 use crate::services::DialogueService;
 use tui_textarea::CursorMove;
+use ratatui::crossterm::event::KeyEvent;
+
+/// Handle raw key input in edit mode (for TextArea character input)
+pub fn handle_edit_mode_raw_input(state: &mut AppState, key_event: KeyEvent) {
+    if let Some(ref mut textarea) = state.edit_textarea {
+        textarea.input(key_event);
+    }
+}
 
 pub fn handle_edit_mode_action(state: &mut AppState, action: EditModeAction) {
     match action {
@@ -65,7 +73,32 @@ fn handle_exit_current_mode(state: &mut AppState) {
         state.focused_message_id,
         state.current_branch_id,
     ) {
-        let content = textarea.lines().join("\n");
+        // Join lines, preserving paragraph breaks (double newlines)
+        // Single newlines within paragraphs are likely from our word wrapping
+        let lines = textarea.lines();
+        let mut content = String::new();
+        let mut prev_was_empty = false;
+        
+        for line in lines {
+            let is_empty = line.trim().is_empty();
+            
+            if is_empty {
+                if !prev_was_empty {
+                    content.push('\n');
+                }
+                prev_was_empty = true;
+            } else {
+                if prev_was_empty && !content.is_empty() {
+                    content.push('\n'); // Preserve paragraph break
+                }
+                if !content.is_empty() && !prev_was_empty {
+                    content.push(' '); // Join wrapped lines with space
+                }
+                content.push_str(line);
+                prev_was_empty = false;
+            }
+        }
+        
         let trimmed_content = content.trim();
 
         if trimmed_content.is_empty() {

@@ -43,6 +43,14 @@ impl App {
                             self.state.dispatch(other);
                         }
                     }
+                } else if self
+                    .input_handler
+                    .should_handle_as_raw_input(key_event, self.state.mode)
+                {
+                    crate::app::reducer::edit_mode_handler::handle_edit_mode_raw_input(
+                        &mut self.state,
+                        key_event,
+                    );
                 }
             }
         }

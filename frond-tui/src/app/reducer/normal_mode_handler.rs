@@ -118,12 +118,41 @@ fn handle_enter_edit_mode(state: &mut AppState) {
         return;
     };
 
+    // Just switch to edit mode - the textarea will be initialized during rendering
+    // with the correct viewport width
     state.mode = crate::app::Mode::Edit;
+    // TextArea will be initialized in edit_mode::content::render with proper viewport width
 }
 
 fn handle_enter_append_mode(state: &mut AppState) {
-    // Transition to edit mode for appending
-    state.mode = crate::app::Mode::Edit;
+    let Some(branch_id) = state.current_branch_id else {
+        state.error_message = Some("No branch selected for appending".to_string());
+        return;
+    };
+
+    // Create a new empty message at the end of the branch using the action system
+    match DialogueService::append_message(&mut state.dialogue, branch_id, "".to_string()) {
+        Ok(()) => {
+            // Get the last message (the one we just created) and focus it
+            if let Some(branch) = state.current_branch() {
+                if let Some(last_message) = branch.messages().iter().last() {
+                    let new_message_id = last_message.id();
+                    state.focused_message_id = Some(new_message_id);
+                    
+                    // Just switch to edit mode - the textarea will be initialized during rendering
+                    state.mode = crate::app::Mode::Edit;
+                    // TextArea will be initialized in edit_mode::content::render with proper viewport width
+                } else {
+                    state.error_message = Some("Failed to find the newly created message".to_string());
+                }
+            } else {
+                state.error_message = Some("Branch no longer exists after creating message".to_string());
+            }
+        }
+        Err(e) => {
+            state.error_message = Some(format!("Failed to create new message: {}", e));
+        }
+    }
 }
 
 fn handle_enter_command_palette(state: &mut AppState) {
@@ -300,3 +329,5 @@ fn handle_prev_tree(state: &mut AppState) {
         }
     }
 }
+
+

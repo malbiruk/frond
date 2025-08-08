@@ -83,6 +83,13 @@ impl InputHandler {
 
         None
     }
+    
+    /// Check if a key event should be handled as raw input in the current mode
+    pub fn should_handle_as_raw_input(&self, key_event: KeyEvent, current_mode: Mode) -> bool {
+        // In edit mode, unmapped keys are raw text input
+        current_mode == Mode::Edit && 
+            self.key_mapping.get_action_id(current_mode, key_event).is_none()
+    }
 
     fn schema_to_action(&self, schema: &ActionSchema, current_mode: &Mode) -> Option<UIAction> {
         match schema {
