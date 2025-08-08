@@ -75,6 +75,8 @@ fn handle_exit_current_mode(state: &mut AppState) {
                 state.error_message = Some(format!("Failed to delete message: {}", e));
                 return;
             }
+            // Invalidate cache for deleted message
+            state.invalidate_message_highlight(message_id);
             if let Some(index) = state.get_message_index(message_id) {
                 state.update_focused_message_after_deletion(index);
             }
@@ -83,6 +85,9 @@ fn handle_exit_current_mode(state: &mut AppState) {
         {
             state.error_message = Some(format!("Failed to save message: {}", e));
             return;
+        } else {
+            // Invalidate cache for edited message
+            state.invalidate_message_highlight(message_id);
         }
     }
 

@@ -143,6 +143,8 @@ fn handle_delete_message(state: &mut AppState) {
 
         match DialogueService::delete_message(&mut state.dialogue, message_id, branch_id) {
             Ok(_) => {
+                // Invalidate cache for deleted message
+                state.invalidate_message_highlight(message_id);
                 if let Some(index) = message_index {
                     state.update_focused_message_after_deletion(index);
                 }

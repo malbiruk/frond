@@ -5,6 +5,7 @@ use ratatui::text::Text;
 pub fn highlight_markdown(content: &str) -> Text<'static> {
     let config = Config {
         colored_output: true,
+        theme: "ansi".to_string(),
         ..Default::default()
     };
     let assets = HighlightingAssets::from_binary();
