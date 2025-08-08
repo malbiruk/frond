@@ -205,4 +205,21 @@ impl AppState {
     pub fn clear_highlight_cache(&mut self) {
         self.highlight_cache.clear();
     }
+
+    pub fn is_append_mode(&self) -> bool {
+        let Some(focused_message_id) = self.focused_message_id else {
+            return false;
+        };
+
+        let Some(branch) = self.current_branch() else {
+            return false;
+        };
+
+        let Some(message) = branch.get_message_by_id(focused_message_id) else {
+            return false;
+        };
+
+        branch.messages().iter().last().map(|last| last.id()) == Some(message.id())
+            && *message.role() == frond_core::Role::User
+    }
 }

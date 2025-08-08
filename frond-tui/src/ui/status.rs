@@ -25,7 +25,11 @@ fn build_mode_text(app_state: &AppState) -> String {
     if app_state.error_message.is_some() {
         return format!("Mode: {:?} > Error", app_state.mode);
     }
-    format!("Mode: {:?}", app_state.mode)
+    
+    match app_state.mode {
+        crate::app::Mode::Edit if app_state.is_append_mode() => "Mode: Edit > Append".to_string(),
+        mode => format!("Mode: {:?}", mode),
+    }
 }
 
 fn build_model_info(app_state: &AppState) -> String {

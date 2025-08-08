@@ -64,8 +64,8 @@ fn app_layout_new_edit_mode() {
             status,
         } => {
             // Should still return Normal variant but with different dimensions
-            // Breadcrumb should be 3 units high (in edit mode)
-            assert_eq!(breadcrumb.height, 3);
+            // Breadcrumb should be 2 units high (in edit mode)
+            assert_eq!(breadcrumb.height, 2);
 
             // Status should be 2 units high
             assert_eq!(status.height, 2);
@@ -279,17 +279,15 @@ fn app_layout_mode_differences() {
                 status: e_status,
             },
         ) => {
-            // Breadcrumb height should be different between modes
-            assert_ne!(
+            // Both modes now use the same breadcrumb height (2)
+            assert_eq!(
                 n_breadcrumb.height, e_breadcrumb.height,
-                "Breadcrumb height should differ between modes"
+                "Both modes should have the same breadcrumb height"
             );
 
-            // Edit mode should have taller breadcrumb (3 vs 2)
-            assert!(
-                e_breadcrumb.height > n_breadcrumb.height,
-                "Edit mode should have taller breadcrumb"
-            );
+            // Both should have height 2
+            assert_eq!(n_breadcrumb.height, 2);
+            assert_eq!(e_breadcrumb.height, 2);
 
             // Status should be the same height
             assert_eq!(
@@ -297,17 +295,15 @@ fn app_layout_mode_differences() {
                 "Status height should be same between modes"
             );
 
-            // Content should be different (because breadcrumb changed)
-            assert_ne!(
+            // Content should be the same (both modes use same layout)
+            assert_eq!(
                 n_content.height, e_content.height,
-                "Content height should differ when breadcrumb changes"
+                "Content height should be same when layouts are identical"
             );
 
-            // Edit mode content should be smaller (less space available)
-            assert!(
-                e_content.height < n_content.height,
-                "Edit mode content should be smaller due to larger breadcrumb"
-            );
+            // Both should have the same content height
+            assert!(n_content.height > 0);
+            assert!(e_content.height > 0);
         }
     }
 }
