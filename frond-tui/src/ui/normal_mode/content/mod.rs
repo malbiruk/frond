@@ -66,7 +66,7 @@ fn update_focus_and_scroll_state(
     viewport_width: u16,
 ) {
     let messages = app_state.current_messages();
-    let total_content_height = scrolling::calculate_total_content_height(&messages, viewport_width);
+    let total_content_height = scrolling::calculate_total_content_height_with_cache(&messages, viewport_width, app_state);
 
     let clamped_scroll_offset = scrolling::clamp_scroll_offset(
         app_state.scroll_offset,
@@ -86,7 +86,7 @@ fn update_focus_and_scroll_state(
 
     // Update scrollbar state
     let messages = app_state.current_messages();
-    let total_height = scrolling::calculate_total_content_height(&messages, viewport_width);
+    let total_height = scrolling::calculate_total_content_height_with_cache(&messages, viewport_width, app_state);
     app_state.scrollbar_state = scrolling::update_scrollbar_state(
         app_state.scrollbar_state,
         app_state.scroll_offset,

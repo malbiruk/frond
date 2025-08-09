@@ -57,6 +57,9 @@ pub struct AppState {
 
     // Syntax highlighting cache
     pub highlight_cache: HashMap<Uuid, ratatui::text::Text<'static>>,
+    
+    // Height cache for messages (viewport_width -> height)
+    pub height_cache: HashMap<(Uuid, u16), usize>,
 }
 
 impl Default for AppState {
@@ -86,6 +89,7 @@ impl Default for AppState {
             error_message: None,
             edit_textarea: None,
             highlight_cache: HashMap::new(),
+            height_cache: HashMap::new(),
         };
 
         // Request focus on last message if available
@@ -204,6 +208,22 @@ impl AppState {
 
     pub fn clear_highlight_cache(&mut self) {
         self.highlight_cache.clear();
+    }
+
+    pub fn get_cached_height(&self, message_id: Uuid, viewport_width: u16) -> Option<usize> {
+        self.height_cache.get(&(message_id, viewport_width)).copied()
+    }
+
+    pub fn cache_height(&mut self, message_id: Uuid, viewport_width: u16, height: usize) {
+        self.height_cache.insert((message_id, viewport_width), height);
+    }
+
+    pub fn invalidate_message_height(&mut self, message_id: Uuid) {
+        self.height_cache.retain(|(id, _), _| *id != message_id);
+    }
+
+    pub fn clear_height_cache(&mut self) {
+        self.height_cache.clear();
     }
 
     pub fn is_append_mode(&self) -> bool {

@@ -35,6 +35,31 @@ pub fn should_render_message(
 }
 
 /// Calculate the visible area for a message within the viewport
+pub fn calculate_visible_message_area_with_cache(
+    content_area: Rect,
+    y_offset: isize,
+    message: &frond_core::Message,
+    viewport_width: u16,
+    app_state: &crate::app::AppState,
+) -> Rect {
+    let message_height =
+        scrolling::calculate_message_display_height_with_cache(message, viewport_width, app_state) as isize;
+    let message_bottom = y_offset + message_height;
+    let viewport_bottom = (content_area.y + content_area.height) as isize;
+
+    let visible_start = y_offset.max(content_area.y as isize) as u16;
+    let visible_end = message_bottom.min(viewport_bottom) as u16;
+    let visible_height = visible_end.saturating_sub(visible_start);
+
+    Rect {
+        x: content_area.x,
+        y: visible_start,
+        width: content_area.width,
+        height: visible_height,
+    }
+}
+
+/// Calculate the visible area for a message within the viewport (fallback version)
 pub fn calculate_visible_message_area(
     content_area: Rect,
     y_offset: isize,
