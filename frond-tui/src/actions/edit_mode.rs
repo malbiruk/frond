@@ -129,6 +129,21 @@ define_actions! {
             name: "select to head",
             description: "extend selection to head of line",
         },
+        SelectLine {
+            id: "select_line",
+            name: "select line",
+            description: "select the entire current line",
+        },
+        SelectToTop {
+            id: "select_to_top",
+            name: "select to top",
+            description: "extend selection to top of document",
+        },
+        SelectToBottom {
+            id: "select_to_bottom",
+            name: "select to bottom",
+            description: "extend selection to bottom of document",
+        },
 
         // Cursor movement - character level
         MoveCursorForward {

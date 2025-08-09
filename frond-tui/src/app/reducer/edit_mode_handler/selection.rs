@@ -36,3 +36,26 @@ pub fn handle_select_to_end(state: &mut AppState) {
 pub fn handle_select_to_head(state: &mut AppState) {
     select_with_cursor_move(state, CursorMove::Head);
 }
+
+// Document boundaries selection
+pub fn handle_select_to_top(state: &mut AppState) {
+    select_with_cursor_move(state, CursorMove::Top);
+}
+
+pub fn handle_select_to_bottom(state: &mut AppState) {
+    select_with_cursor_move(state, CursorMove::Bottom);
+}
+
+// Entire line selection
+pub fn handle_select_line(state: &mut AppState) {
+    super::utils::textarea_operation(state, |textarea| {
+        // Move to beginning of line
+        textarea.move_cursor(CursorMove::Head);
+        // Start selection
+        textarea.start_selection();
+        // Move to end of line
+        textarea.move_cursor(CursorMove::End);
+        // Move forward one more character to include the newline
+        textarea.move_cursor(CursorMove::Forward);
+    });
+}

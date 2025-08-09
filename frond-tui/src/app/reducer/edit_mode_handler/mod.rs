@@ -72,5 +72,8 @@ pub fn handle_edit_mode_action(state: &mut AppState, action: EditModeAction) {
         EditModeAction::SelectWordBack => selection::handle_select_word_back(state),
         EditModeAction::SelectToEnd => selection::handle_select_to_end(state),
         EditModeAction::SelectToHead => selection::handle_select_to_head(state),
+        EditModeAction::SelectLine => selection::handle_select_line(state),
+        EditModeAction::SelectToTop => selection::handle_select_to_top(state),
+        EditModeAction::SelectToBottom => selection::handle_select_to_bottom(state),
     }
 }
