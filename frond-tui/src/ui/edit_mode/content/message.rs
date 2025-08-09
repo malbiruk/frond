@@ -1,14 +1,12 @@
 use crate::app::AppState;
-use ratatui::{Frame, layout::Rect, style::{Color, Style}, widgets::{Block, BorderType, Paragraph}, prelude::Alignment, text::Text};
-
-pub fn render_message(
-    frame: &mut Frame,
-    area: Rect,
-    message: &frond_core::Message,
-    app_state: &AppState,
-) {
-    render_message_with_scroll(frame, area, message, app_state, 0);
-}
+use ratatui::{
+    Frame,
+    layout::Rect,
+    prelude::Alignment,
+    style::{Color, Style},
+    text::Text,
+    widgets::{Block, BorderType, Paragraph},
+};
 
 pub fn render_message_with_scroll(
     frame: &mut Frame,
@@ -19,7 +17,7 @@ pub fn render_message_with_scroll(
 ) {
     let block = create_message_block(message.role(), app_state);
     let content = get_message_content(message, app_state);
-    
+
     let paragraph = Paragraph::new(content)
         .block(block)
         .wrap(ratatui::widgets::Wrap { trim: false })
@@ -42,7 +40,8 @@ fn create_message_block(role: &frond_core::Role, app_state: &AppState) -> Block<
 }
 
 fn get_message_content<'a>(message: &'a frond_core::Message, app_state: &'a AppState) -> Text<'a> {
-    app_state.highlight_cache
+    app_state
+        .highlight_cache
         .get(&message.id())
         .cloned()
         .unwrap_or_else(|| Text::raw(message.content()))

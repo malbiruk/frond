@@ -83,33 +83,8 @@ fn handle_exit_current_mode(state: &mut AppState) {
         state.focused_message_id,
         state.current_branch_id,
     ) {
-        // Join lines, preserving paragraph breaks (double newlines)
-        // Single newlines within paragraphs are likely from our word wrapping
-        let lines = textarea.lines();
-        let mut content = String::new();
-        let mut prev_was_empty = false;
-        
-        for line in lines {
-            let is_empty = line.trim().is_empty();
-            
-            if is_empty {
-                if !prev_was_empty {
-                    content.push('\n');
-                }
-                prev_was_empty = true;
-            } else {
-                if prev_was_empty && !content.is_empty() {
-                    content.push('\n'); // Preserve paragraph break
-                }
-                if !content.is_empty() && !prev_was_empty {
-                    content.push(' '); // Join wrapped lines with space
-                }
-                content.push_str(line);
-                prev_was_empty = false;
-            }
-        }
-        
-        let content = content.trim().to_string();
+        // Get content as-is, preserving all newlines the user typed
+        let content = textarea.lines().join("\n").trim().to_string();
 
         if content.is_empty() {
             if let Err(e) =
