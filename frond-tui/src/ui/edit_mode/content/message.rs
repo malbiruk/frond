@@ -20,6 +20,7 @@ pub fn render_message_with_scroll(
 
     let paragraph = Paragraph::new(content)
         .block(block)
+        .style(Style::default().fg(Color::Reset))
         .wrap(ratatui::widgets::Wrap { trim: false })
         .scroll((scroll_offset, 0));
 

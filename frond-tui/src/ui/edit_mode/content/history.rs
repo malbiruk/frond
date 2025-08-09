@@ -9,12 +9,30 @@ pub fn render_excluding_message(
     app_state: &mut AppState,
     exclude_message_id: Uuid,
 ) {
-    let messages = get_filtered_messages(app_state, exclude_message_id);
+    let messages = get_filtered_messages_before(app_state, exclude_message_id);
     if messages.is_empty() {
         return;
     }
 
-    let scroll_info = calculate_scroll(area, &messages);
+    // For history above edited message, we want it positioned at the bottom of the area
+    // (right above the textarea) with no gap
+    let scroll_info = calculate_scroll_to_bottom(area, &messages);
+    render_visible_messages(frame, area, &messages, scroll_info, app_state);
+}
+
+pub fn render_excluding_message_below(
+    frame: &mut Frame,
+    area: Rect,
+    app_state: &mut AppState,
+    exclude_message_id: Uuid,
+) {
+    let messages = get_filtered_messages_after(app_state, exclude_message_id);
+    if messages.is_empty() {
+        return;
+    }
+
+    // For messages below, we want to show from the beginning (no scroll offset)
+    let scroll_info = ScrollInfo { scroll_offset: 0 };
     render_visible_messages(frame, area, &messages, scroll_info, app_state);
 }
 
@@ -22,21 +40,46 @@ struct ScrollInfo {
     scroll_offset: usize,
 }
 
-fn get_filtered_messages(app_state: &AppState, exclude_id: Uuid) -> Vec<&frond_core::Message> {
-    app_state
-        .current_messages()
-        .into_iter()
-        .filter(|m| m.id() != exclude_id)
-        .collect()
+fn get_filtered_messages_before(app_state: &AppState, exclude_id: Uuid) -> Vec<&frond_core::Message> {
+    let all_messages = app_state.current_messages();
+    let mut messages_before = Vec::new();
+    
+    for message in all_messages {
+        if message.id() == exclude_id {
+            break; // Stop when we reach the excluded message
+        }
+        messages_before.push(message);
+    }
+    
+    messages_before
 }
 
-fn calculate_scroll(area: Rect, messages: &[&frond_core::Message]) -> ScrollInfo {
+fn get_filtered_messages_after(app_state: &AppState, exclude_id: Uuid) -> Vec<&frond_core::Message> {
+    let all_messages = app_state.current_messages();
+    let mut found_excluded = false;
+    let mut messages_after = Vec::new();
+    
+    for message in all_messages {
+        if found_excluded {
+            messages_after.push(message);
+        } else if message.id() == exclude_id {
+            found_excluded = true;
+        }
+    }
+    
+    messages_after
+}
+
+
+fn calculate_scroll_to_bottom(area: Rect, messages: &[&frond_core::Message]) -> ScrollInfo {
     let total_height: usize = messages
         .iter()
         .map(|m| calculate_message_height(m, area.width))
         .sum();
 
     let available_height = area.height as usize;
+    
+    // Position messages so they end at the bottom of the area (no gap)
     let scroll_offset = total_height.saturating_sub(available_height);
 
     ScrollInfo { scroll_offset }
