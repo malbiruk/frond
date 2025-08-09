@@ -37,7 +37,7 @@ pub fn default_keybindings_string_map() -> HashMap<String, HashMap<String, Strin
             &[
                 // Mode operations
                 ("exit_mode", "esc"),
-                ("submit_message", "ctrl-enter"),
+                ("submit_message", "alt-enter"),
                 // Character operations
                 ("delete_char", "backspace"),
                 ("delete_next_char", "delete"),
@@ -45,12 +45,13 @@ pub fn default_keybindings_string_map() -> HashMap<String, HashMap<String, Strin
                 // Line operations
                 ("delete_line_by_end", "alt-k"),
                 ("delete_line_by_head", "alt-u"),
+                ("delete_line", "ctrl-k"),
                 // Word operations
-                ("delete_word", "ctrl-w"),
-                ("delete_next_word", "alt-d"),
+                ("delete_word", "alt-backspace"),
+                ("delete_next_word", "alt-delete"),
                 // Undo/Redo
                 ("undo", "ctrl-z"),
-                ("redo", "ctrl-Z"),
+                ("redo", "ctrl-y"),
                 // Clipboard operations
                 ("copy", "ctrl-c"),
                 ("cut", "ctrl-x"),

@@ -30,6 +30,11 @@ define_actions! {
             name: "delete to head",
             description: "delete from cursor until the head of line",
         },
+        DeleteLine {
+            id: "delete_line",
+            name: "delete line",
+            description: "delete the entire current line",
+        },
 
         // Word operations
         DeleteWord {
@@ -198,13 +203,6 @@ define_actions! {
             id: "move_cursor_bottom",
             name: "cursor bottom",
             description: "move cursor to bottom of document",
-        },
-
-        // Cursor movement - viewport
-        MoveCursorInViewport {
-            id: "move_cursor_in_viewport",
-            name: "cursor in viewport",
-            description: "move cursor to stay in the viewport",
         },
 
         // Mode operations
