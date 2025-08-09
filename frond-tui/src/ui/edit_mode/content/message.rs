@@ -7,12 +7,23 @@ pub fn render_message(
     message: &frond_core::Message,
     app_state: &AppState,
 ) {
+    render_message_with_scroll(frame, area, message, app_state, 0);
+}
+
+pub fn render_message_with_scroll(
+    frame: &mut Frame,
+    area: Rect,
+    message: &frond_core::Message,
+    app_state: &AppState,
+    scroll_offset: u16,
+) {
     let block = create_message_block(message.role(), app_state);
     let content = get_message_content(message, app_state);
     
     let paragraph = Paragraph::new(content)
         .block(block)
-        .wrap(ratatui::widgets::Wrap { trim: false });
+        .wrap(ratatui::widgets::Wrap { trim: false })
+        .scroll((scroll_offset, 0));
 
     frame.render_widget(paragraph, area);
 }

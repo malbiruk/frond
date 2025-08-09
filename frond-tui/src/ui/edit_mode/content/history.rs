@@ -69,7 +69,8 @@ fn render_visible_messages(
         );
 
         if visible_portion.height > 0 {
-            message::render_message(frame, visible_portion.area, message, app_state);
+            let skip_lines = scroll_info.scroll_offset.saturating_sub(current_height);
+            message::render_message_with_scroll(frame, visible_portion.area, message, app_state, skip_lines as u16);
             render_y += visible_portion.height;
         }
 
@@ -94,8 +95,9 @@ fn calculate_visible_portion(
     scroll_offset: usize,
 ) -> VisiblePortion {
     let skip_lines = scroll_offset.saturating_sub(current_height);
-    let visible_height = (message_height - skip_lines)
-        .min((area.y + area.height - render_y) as usize);
+    let content_height = message_height - skip_lines;
+    let available_height = (area.y + area.height - render_y) as usize;
+    let visible_height = content_height.min(available_height);
 
     VisiblePortion {
         area: Rect {
