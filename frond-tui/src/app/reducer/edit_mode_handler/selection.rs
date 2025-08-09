@@ -1,6 +1,6 @@
+use super::utils::select_with_cursor_move;
 use crate::app::state::AppState;
 use tui_textarea::CursorMove;
-use super::utils::select_with_cursor_move;
 
 // Character level selection
 pub fn handle_select_forward(state: &mut AppState) {
@@ -49,13 +49,9 @@ pub fn handle_select_to_bottom(state: &mut AppState) {
 // Entire line selection
 pub fn handle_select_line(state: &mut AppState) {
     super::utils::textarea_operation(state, |textarea| {
-        // Move to beginning of line
         textarea.move_cursor(CursorMove::Head);
-        // Start selection
         textarea.start_selection();
-        // Move to end of line
         textarea.move_cursor(CursorMove::End);
-        // Move forward one more character to include the newline
         textarea.move_cursor(CursorMove::Forward);
     });
 }

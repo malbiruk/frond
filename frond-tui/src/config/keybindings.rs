@@ -69,6 +69,9 @@ pub fn default_keybindings_string_map() -> HashMap<String, HashMap<String, Strin
                 // Selection movement - line boundaries
                 ("select_to_end", "shift-end"),
                 ("select_to_head", "shift-home"),
+                ("select_line", "ctrl-l"),
+                ("select_to_top", "ctrl-shift-home"),
+                ("select_to_bottom", "ctrl-shift-end"),
                 // Cursor movement - character level
                 ("move_cursor_forward", "right"),
                 ("move_cursor_back", "left"),

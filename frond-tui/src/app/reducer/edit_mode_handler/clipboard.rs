@@ -14,75 +14,26 @@ pub fn handle_redo(state: &mut AppState) {
 }
 
 pub fn handle_copy(state: &mut AppState) {
-    let mut clipboard_error: Option<String> = None;
-
-    textarea_operation(state, |textarea| {
-        // Get selected text before copying (same pattern as cut)
-        let selected_text = textarea
-            .selection_range()
-            .map(|selection| get_selected_text(textarea, selection));
-
-        // Do the textarea copy (to internal buffer)
+    handle_copy_or_cut_operation(state, "copy", |textarea| {
         textarea.copy();
-
-        // Copy to desktop clipboard
-        if let Some(text) = selected_text {
-            if let Err(e) = copy_to_desktop_clipboard(&text) {
-                clipboard_error = Some(format!("Failed to copy to clipboard: {}", e));
-            }
-        }
     });
-
-    // Set error after the textarea operation if needed
-    if let Some(error) = clipboard_error {
-        state.error_message = Some(error);
-    }
 }
 
 pub fn handle_cut(state: &mut AppState) {
-    let mut clipboard_error: Option<String> = None;
-
-    textarea_operation(state, |textarea| {
-        // Get selected text before cutting
-        let selected_text = textarea
-            .selection_range()
-            .map(|selection| get_selected_text(textarea, selection));
-
-        // Do the textarea cut (to internal buffer)
+    handle_copy_or_cut_operation(state, "cut", |textarea| {
         textarea.cut();
-
-        // Copy cut text to desktop clipboard
-        if let Some(text) = selected_text {
-            if let Err(e) = copy_to_desktop_clipboard(&text) {
-                clipboard_error = Some(format!("Failed to copy cut text to clipboard: {}", e));
-            }
-        }
     });
-
-    // Set error after the textarea operation if needed
-    if let Some(error) = clipboard_error {
-        state.error_message = Some(error);
-    }
 }
 
 pub fn handle_paste(state: &mut AppState) {
-    // First try to paste from desktop clipboard
-    match paste_from_desktop_clipboard() {
+    match get_desktop_clipboard_text() {
         Ok(desktop_text) if !desktop_text.is_empty() => {
-            // Paste desktop clipboard content
             textarea_operation(state, |textarea| {
                 textarea.insert_str(&desktop_text);
             });
         }
-        Ok(_) => {
-            // Desktop clipboard empty, use textarea's internal paste
-            textarea_operation(state, |textarea| {
-                textarea.paste();
-            });
-        }
-        Err(e) => {
-            // Desktop clipboard failed, use textarea's internal paste
-            state.error_message = Some(format!("Desktop clipboard error (using internal): {}", e));
+        Ok(_) | Err(_) => {
+            // Desktop clipboard empty or failed, silently use textarea's internal paste
             textarea_operation(state, |textarea| {
                 textarea.paste();
             });
@@ -96,7 +47,42 @@ pub fn handle_select_all(state: &mut AppState) {
     });
 }
 
-// Helper functions for desktop clipboard integration
+// Common operation for copy and cut that handles desktop clipboard integration
+fn handle_copy_or_cut_operation<F>(state: &mut AppState, operation: &str, textarea_op: F)
+where
+    F: FnOnce(&mut tui_textarea::TextArea),
+{
+    let mut clipboard_error: Option<String> = None;
+
+    textarea_operation(state, |textarea| {
+        // Get selected text before the operation
+        let selected_text = get_selected_text_if_any(textarea);
+
+        // Perform the textarea operation
+        textarea_op(textarea);
+
+        // Copy to desktop clipboard if we had selected text
+        if let Some(text) = selected_text {
+            if let Err(e) = copy_to_desktop_clipboard(&text) {
+                clipboard_error = Some(format!("Failed to {} to clipboard: {}", operation, e));
+            }
+        }
+    });
+
+    // Set error after the textarea operation if needed
+    if let Some(error) = clipboard_error {
+        state.error_message = Some(error);
+    }
+}
+
+// Extract selected text if any exists
+fn get_selected_text_if_any(textarea: &tui_textarea::TextArea) -> Option<String> {
+    textarea
+        .selection_range()
+        .map(|selection| get_selected_text(textarea, selection))
+}
+
+// Desktop clipboard operations
 fn copy_to_desktop_clipboard(text: &str) -> Result<(), Box<dyn std::error::Error>> {
     use cli_clipboard::{ClipboardContext, ClipboardProvider};
     let mut ctx = ClipboardContext::new()?;
@@ -104,11 +90,10 @@ fn copy_to_desktop_clipboard(text: &str) -> Result<(), Box<dyn std::error::Error
     Ok(())
 }
 
-fn paste_from_desktop_clipboard() -> Result<String, Box<dyn std::error::Error>> {
+fn get_desktop_clipboard_text() -> Result<String, Box<dyn std::error::Error>> {
     use cli_clipboard::{ClipboardContext, ClipboardProvider};
     let mut ctx = ClipboardContext::new()?;
-    let text = ctx.get_contents()?;
-    Ok(text)
+    ctx.get_contents()
 }
 
 fn get_selected_text(
