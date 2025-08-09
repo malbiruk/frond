@@ -16,7 +16,8 @@ use ratatui::Frame;
 /// Main entry point for rendering the content area
 pub fn render(frame: &mut Frame, area: Rect, app_state: &mut AppState) {
     let viewport_height = area.height as usize;
-    let viewport_width = area.width;
+    let content_area = layout_calc::calculate_content_area(area);
+    let viewport_width = content_area.width;
 
     resolve_pending_focus_request_handler(app_state, viewport_height, viewport_width);
     update_focus_and_scroll_state(app_state, viewport_height, viewport_width);

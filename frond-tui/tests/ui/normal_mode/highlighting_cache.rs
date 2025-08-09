@@ -20,11 +20,11 @@ fn get_highlighted_text_caches_result() {
     let message = Message::new("# Test Message", Role::User);
     
     // Cache should be empty before first call
-    assert!(!app_state.highlight_cache.contains_key(&message.id()));
+    assert!(!app_state.has_cached_highlight(message.id()));
     
     // First call should populate cache
     let result1 = app_state.get_highlighted_text(&message);
-    assert!(app_state.highlight_cache.contains_key(&message.id()));
+    assert!(app_state.has_cached_highlight(message.id()));
     
     // Second call should use cache (same result)
     let result2 = app_state.get_highlighted_text(&message);
@@ -44,8 +44,8 @@ fn highlight_cache_stores_by_message_id() {
     app_state.get_highlighted_text(&message2);
     
     // Both should be cached
-    assert!(app_state.highlight_cache.contains_key(&message1.id()));
-    assert!(app_state.highlight_cache.contains_key(&message2.id()));
+    assert!(app_state.has_cached_highlight(message1.id()));
+    assert!(app_state.has_cached_highlight(message2.id()));
     assert_eq!(app_state.highlight_cache.len(), 2);
 }
 
@@ -56,11 +56,11 @@ fn invalidate_message_highlight_removes_from_cache() {
     
     // Cache the message
     app_state.get_highlighted_text(&message);
-    assert!(app_state.highlight_cache.contains_key(&message.id()));
+    assert!(app_state.has_cached_highlight(message.id()));
     
     // Invalidate the cache
     app_state.invalidate_message_highlight(message.id());
-    assert!(!app_state.highlight_cache.contains_key(&message.id()));
+    assert!(!app_state.has_cached_highlight(message.id()));
 }
 
 #[test]
@@ -123,12 +123,12 @@ fn different_message_content_produces_different_cache_entries() {
     // Should have separate cache entries
     assert_eq!(app_state.highlight_cache.len(), 2);
     
-    let cached1 = app_state.highlight_cache.get(&message1.id()).unwrap();
-    let cached2 = app_state.highlight_cache.get(&message2.id()).unwrap();
+    let cached1 = app_state.get_cached_highlighted_text(message1.id()).unwrap();
+    let cached2 = app_state.get_cached_highlighted_text(message2.id()).unwrap();
     
     // Content should be different
-    let content1 = extract_content(cached1);
-    let content2 = extract_content(cached2);
+    let content1 = extract_content(&cached1);
+    let content2 = extract_content(&cached2);
     assert_ne!(content1, content2);
 }
 

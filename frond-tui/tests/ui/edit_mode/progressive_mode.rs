@@ -60,6 +60,7 @@ fn create_app_state_editing_message(dialogue: Dialogue, message_index: usize, co
         error_message: None,
         edit_textarea: Some(textarea),
         highlight_cache: Default::default(),
+        height_cache: Default::default(),
     }
 }
 

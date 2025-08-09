@@ -77,11 +77,7 @@ fn edit_message_updates_content() {
 fn edit_message_preserves_role_and_id() {
     let mut dialogue = create_test_dialogue();
     let message_id = get_first_message_id(&dialogue).unwrap();
-    let original_role = dialogue
-        .get_message_by_id(message_id)
-        .unwrap()
-        .role()
-        .clone();
+    let original_role = *dialogue.get_message_by_id(message_id).unwrap().role();
 
     let result =
         DialogueService::edit_message(&mut dialogue, message_id, "New content".to_string());

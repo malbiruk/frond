@@ -47,6 +47,7 @@ fn create_app_state_with_textarea(content: &str) -> AppState {
         error_message: None,
         edit_textarea: Some(textarea),
         highlight_cache: Default::default(),
+        height_cache: Default::default(),
     }
 }
 
@@ -70,6 +71,7 @@ fn create_app_state_without_textarea() -> AppState {
         error_message: None,
         edit_textarea: None,
         highlight_cache: Default::default(),
+        height_cache: Default::default(),
     }
 }
 

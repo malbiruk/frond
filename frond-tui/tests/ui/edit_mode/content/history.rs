@@ -47,6 +47,7 @@ fn create_app_state_editing_message(dialogue: Dialogue, message_index: usize) ->
         error_message: None,
         edit_textarea: Some(tui_textarea::TextArea::default()),
         highlight_cache: Default::default(),
+        height_cache: Default::default(),
     }
 }
 
@@ -252,6 +253,7 @@ fn history_rendering_handles_no_messages_gracefully() {
         error_message: None,
         edit_textarea: None,
         highlight_cache: Default::default(),
+        height_cache: Default::default(),
     };
     
     let messages = app_state.current_messages();

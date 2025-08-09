@@ -6,17 +6,17 @@ pub fn render_messages_with_scroll(
     frame: &mut Frame,
     area: Rect,
     app_state: &mut AppState,
-    viewport_width: u16,
+    _viewport_width: u16,
 ) {
-    app_state.populate_caches_for_current_branch(viewport_width);
-    render_messages(frame, area, app_state, viewport_width);
+    let content_area = layout_calc::calculate_content_area(area);
+    app_state.populate_caches_for_current_branch(content_area.width);
+    render_messages(frame, area, app_state);
 }
 
 fn render_messages(
     frame: &mut Frame,
     area: Rect,
     app_state: &mut AppState,
-    viewport_width: u16,
 ) {
     let content_area = layout_calc::calculate_content_area(area);
     let mut y_offset = layout_calc::calculate_initial_y_offset(content_area, app_state.scroll_offset);
@@ -24,11 +24,11 @@ fn render_messages(
     let message_data = collect_message_data(app_state);
 
     for (message_id, content, role) in message_data {
-        if should_render_message(app_state, message_id, y_offset, &content, role, content_area, viewport_width) {
+        if should_render_message(app_state, message_id, y_offset, &content, role, content_area, content_area.width) {
             render_message(frame, content_area, message_id, &content, role, app_state, y_offset);
         }
 
-        y_offset += get_message_height(app_state, message_id, &content, role, viewport_width);
+        y_offset += get_message_height(app_state, message_id, &content, role, content_area.width);
 
         if layout_calc::is_below_viewport(y_offset, content_area) {
             break;
@@ -50,13 +50,13 @@ fn should_render_message(
     content: &str,
     role: frond_core::Role,
     content_area: Rect,
-    viewport_width: u16,
+    content_width: u16,
 ) -> bool {
-    let message_height = if let Some(cached_height) = app_state.get_cached_height(message_id, viewport_width) {
+    let message_height = if let Some(cached_height) = app_state.get_cached_height(message_id, content_width) {
         cached_height as isize
     } else {
         let temp_msg = frond_core::Message::new(content, role);
-        crate::ui::normal_mode::scrolling::calculate_message_display_height(&temp_msg, viewport_width) as isize
+        crate::ui::normal_mode::scrolling::calculate_message_display_height(&temp_msg, content_width) as isize
     };
 
     let message_bottom = y_offset + message_height;
@@ -69,13 +69,13 @@ fn get_message_height(
     message_id: uuid::Uuid,
     content: &str,
     role: frond_core::Role,
-    viewport_width: u16,
+    content_width: u16,
 ) -> isize {
-    if let Some(cached_height) = app_state.get_cached_height(message_id, viewport_width) {
+    if let Some(cached_height) = app_state.get_cached_height(message_id, content_width) {
         cached_height as isize
     } else {
         let temp_msg = frond_core::Message::new(content, role);
-        crate::ui::normal_mode::scrolling::calculate_message_display_height(&temp_msg, viewport_width) as isize
+        crate::ui::normal_mode::scrolling::calculate_message_display_height(&temp_msg, content_width) as isize
     }
 }
 

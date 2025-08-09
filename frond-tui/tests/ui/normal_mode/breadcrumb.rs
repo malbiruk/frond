@@ -52,6 +52,7 @@ fn create_test_app_state_with_tokens(used: u32, available: u32) -> AppState {
         error_message: None,
         edit_textarea: None,
         highlight_cache: std::collections::HashMap::new(),
+        height_cache: std::collections::HashMap::new(),
     }
 }
 

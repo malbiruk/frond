@@ -5,7 +5,7 @@ mod message;
 mod textarea;
 
 use crate::app::AppState;
-use crate::ui::normal_mode::content::{widget_factory, focus_resolver};
+use crate::ui::normal_mode::content::{focus_resolver, widget_factory};
 use crate::ui::normal_mode::scrolling;
 use ratatui::{Frame, layout::Rect};
 
@@ -18,10 +18,10 @@ pub fn render(frame: &mut Frame, area: Rect, app_state: &mut AppState) {
     let content_area = get_content_area_for_scrollbar(area);
     let viewport_height = area.height as usize;
     let viewport_width = content_area.width; // Use the narrower width for calculations
-    
+
     // Process any pending scrolling requests (e.g., when entering edit mode)
     process_pending_scrolling_request(app_state, viewport_height, viewport_width);
-    
+
     if should_initialize_textarea(app_state) {
         textarea_utils::initialize_from_message(app_state, content_area.width);
     }
@@ -81,7 +81,7 @@ fn get_edit_context(
 
     Ok(EditContext {
         is_append_mode: app_state.is_append_mode(),
-        message_role: message.role().clone(),
+        message_role: *message.role(),
     })
 }
 
@@ -188,7 +188,7 @@ fn process_pending_scrolling_request(
 ) {
     if let Some(request) = app_state.pending_scrolling_request.take() {
         let messages = app_state.current_messages();
-        
+
         let focus_result = focus_resolver::resolve_pending_focus_request(
             request,
             &messages,
@@ -196,7 +196,7 @@ fn process_pending_scrolling_request(
             viewport_height,
             viewport_width,
         );
-        
+
         if let Some((message_id, scroll_offset)) = focus_result {
             app_state.focused_message_id = Some(message_id);
             app_state.scroll_offset = scroll_offset;
@@ -211,7 +211,7 @@ fn update_scrollbar_for_edit_mode(
 ) {
     // Calculate total content height including the current textarea height
     let total_height = calculate_total_content_height_with_textarea(app_state, viewport_width);
-    
+
     // Update scrollbar state
     app_state.scrollbar_state = scrolling::update_scrollbar_state(
         app_state.scrollbar_state,
@@ -227,22 +227,24 @@ fn calculate_total_content_height_with_textarea(
 ) -> usize {
     let messages = app_state.current_messages();
     let mut total_height = 0;
-    
+
     for message in messages {
         if Some(message.id()) == app_state.focused_message_id {
             // For the message being edited, use the textarea's current height
             if let Some(ref textarea) = app_state.edit_textarea {
-                total_height += textarea_utils::calculate_display_height(textarea, viewport_width) as usize;
+                total_height +=
+                    textarea_utils::calculate_display_height(textarea, viewport_width) as usize;
             } else {
                 // Fallback to message height if textarea not initialized
-                total_height += scrolling::calculate_message_display_height(message, viewport_width);
+                total_height +=
+                    scrolling::calculate_message_display_height(message, viewport_width);
             }
         } else {
             // For other messages, use their normal display height
             total_height += scrolling::calculate_message_display_height(message, viewport_width);
         }
     }
-    
+
     total_height
 }
 
