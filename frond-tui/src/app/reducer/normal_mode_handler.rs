@@ -109,13 +109,14 @@ fn handle_scroll_to_previous_message(state: &mut AppState) {
 
 // Mode transition handlers
 fn handle_enter_edit_mode(state: &mut AppState) {
-    let Some(_message_id) = state.focused_message_id else {
+    let Some(message_id) = state.focused_message_id else {
         state.error_message = Some("No message selected for editing".to_string());
         return;
     };
 
-    // Just switch to edit mode - the textarea will be initialized during rendering
-    // with the correct viewport width
+    // Center the message being edited before switching to edit mode for visual consistency
+    state.pending_scrolling_request = Some(crate::app::state::ScrollingRequest::ScrollToMessage(message_id));
+    // Switch to edit mode - scrollbar state will be properly set from the scrolling request
     state.mode = crate::app::Mode::Edit;
     // TextArea will be initialized in edit_mode::content::render with proper viewport width
 }

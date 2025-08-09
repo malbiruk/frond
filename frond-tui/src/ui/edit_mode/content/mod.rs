@@ -5,6 +5,7 @@ mod message;
 mod textarea;
 
 use crate::app::AppState;
+use crate::ui::normal_mode::content::widget_factory;
 use ratatui::{Frame, layout::Rect};
 
 use errors::*;
@@ -12,14 +13,17 @@ use layout::*;
 use textarea as textarea_utils;
 
 pub fn render(frame: &mut Frame, area: Rect, app_state: &mut AppState) {
+    // Calculate content area that leaves space for scrollbar (1 character narrower)
+    let content_area = get_content_area_for_scrollbar(area);
+    
     if should_initialize_textarea(app_state) {
-        textarea_utils::initialize_from_message(app_state, area.width);
+        textarea_utils::initialize_from_message(app_state, content_area.width);
     }
 
     let focused_message_id = match app_state.focused_message_id {
         Some(id) => id,
         None => {
-            render_no_message_selected(frame, area);
+            render_no_message_selected(frame, content_area);
             return;
         }
     };
@@ -27,22 +31,25 @@ pub fn render(frame: &mut Frame, area: Rect, app_state: &mut AppState) {
     let edit_context = match get_edit_context(app_state, focused_message_id) {
         Ok(context) => context,
         Err(error_type) => {
-            render_context_error(frame, area, error_type);
+            render_context_error(frame, content_area, error_type);
             return;
         }
     };
 
     match app_state.edit_textarea.as_ref() {
         Some(_) if edit_context.is_append_mode => {
-            render_append_mode(frame, area, edit_context.message_role, app_state);
+            render_append_mode(frame, content_area, edit_context.message_role, app_state);
         }
         Some(_) => {
-            render_progressive_edit_mode(frame, area, edit_context.message_role, app_state);
+            render_progressive_edit_mode(frame, content_area, edit_context.message_role, app_state);
         }
         None => {
-            render_textarea_not_initialized(frame, area);
+            render_textarea_not_initialized(frame, content_area);
         }
     }
+
+    // Render scrollbar using the existing normal mode scrollbar state
+    widget_factory::render_scrollbar(frame, area, app_state);
 }
 
 struct EditContext {
@@ -155,6 +162,16 @@ fn render_append_mode(
 }
 
 // Helper functions
+fn get_content_area_for_scrollbar(area: Rect) -> Rect {
+    // Leave 1 character of width for the scrollbar on the right
+    Rect {
+        x: area.x,
+        y: area.y,
+        width: area.width.saturating_sub(1),
+        height: area.height,
+    }
+}
+
 fn get_messages_before(app_state: &AppState, exclude_id: uuid::Uuid) -> Vec<&frond_core::Message> {
     let all_messages = app_state.current_messages();
     let mut messages_before = Vec::new();
