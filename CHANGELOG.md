@@ -6,6 +6,14 @@ All notable changes to Frond will be documented in this file.
 
 ### frond-tui
 
+#### 2025-08-09
+- Added edit and append modes for message modification
+- Added system clipboard integration with fallback to internal clipboard
+- Added text selection operations (select line, select to top/bottom)
+- Added delete line operation (ctrl-k)
+- Added dynamic scrollbar updates in edit mode
+- Refactored edit mode handler into modular submodules
+
 #### 2025-08-06
 - Added syntax highlighting for markdown message content using bat crate
 - Added smart focus behavior for large messages (show beginning/end instead of centering)
