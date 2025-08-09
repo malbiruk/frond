@@ -41,9 +41,6 @@ fn create_message_block(role: &frond_core::Role, app_state: &AppState) -> Block<
 }
 
 fn get_message_content<'a>(message: &'a frond_core::Message, app_state: &'a AppState) -> Text<'a> {
-    app_state
-        .highlight_cache
-        .get(&message.id())
-        .cloned()
+    app_state.get_cached_highlighted_text(message.id())
         .unwrap_or_else(|| Text::raw(message.content()))
 }

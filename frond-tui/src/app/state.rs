@@ -55,11 +55,11 @@ pub struct AppState {
     // Edit mode state
     pub edit_textarea: Option<TextArea<'static>>,
 
-    // Syntax highlighting cache
-    pub highlight_cache: HashMap<Uuid, ratatui::text::Text<'static>>,
+    // Syntax highlighting cache (tree_id, branch_id, message_id) -> highlighted_text
+    pub highlight_cache: HashMap<(Uuid, Uuid, Uuid), ratatui::text::Text<'static>>,
     
-    // Height cache for messages (viewport_width -> height)
-    pub height_cache: HashMap<(Uuid, u16), usize>,
+    // Height cache (tree_id, branch_id, message_id, viewport_width) -> height
+    pub height_cache: HashMap<(Uuid, Uuid, Uuid, u16), usize>,
 }
 
 impl Default for AppState {
@@ -188,22 +188,49 @@ impl AppState {
         self.error_message = None;
     }
 
+    fn current_cache_context(&self) -> Option<(Uuid, Uuid)> {
+        Some((self.current_tree_id?, self.current_branch_id?))
+    }
+
     pub fn get_highlighted_text(&mut self, message: &frond_core::Message) -> ratatui::text::Text<'static> {
-        let message_id = message.id();
-        
-        // Check cache first
-        if let Some(cached_text) = self.highlight_cache.get(&message_id) {
-            return cached_text.clone();
+        if let Some((tree_id, branch_id)) = self.current_cache_context() {
+            let cache_key = (tree_id, branch_id, message.id());
+            
+            if let Some(cached_text) = self.highlight_cache.get(&cache_key) {
+                return cached_text.clone();
+            }
+            
+            let highlighted_text = crate::ui::normal_mode::highlighting::highlight_markdown(message.content());
+            self.highlight_cache.insert(cache_key, highlighted_text.clone());
+            highlighted_text
+        } else {
+            crate::ui::normal_mode::highlighting::highlight_markdown(message.content())
         }
-        
-        // Cache miss - highlight and cache
-        let highlighted_text = crate::ui::normal_mode::highlighting::highlight_markdown(message.content());
-        self.highlight_cache.insert(message_id, highlighted_text.clone());
-        highlighted_text
+    }
+
+    pub fn get_cached_highlighted_text(&self, message_id: Uuid) -> Option<ratatui::text::Text<'static>> {
+        let (tree_id, branch_id) = self.current_cache_context()?;
+        self.highlight_cache.get(&(tree_id, branch_id, message_id)).cloned()
+    }
+
+    pub fn has_cached_highlight(&self, message_id: Uuid) -> bool {
+        if let Some((tree_id, branch_id)) = self.current_cache_context() {
+            self.highlight_cache.contains_key(&(tree_id, branch_id, message_id))
+        } else {
+            false
+        }
+    }
+
+    pub fn cache_highlighted_text(&mut self, message_id: Uuid, text: ratatui::text::Text<'static>) {
+        if let Some((tree_id, branch_id)) = self.current_cache_context() {
+            self.highlight_cache.insert((tree_id, branch_id, message_id), text);
+        }
     }
 
     pub fn invalidate_message_highlight(&mut self, message_id: Uuid) {
-        self.highlight_cache.remove(&message_id);
+        if let Some((tree_id, branch_id)) = self.current_cache_context() {
+            self.highlight_cache.remove(&(tree_id, branch_id, message_id));
+        }
     }
 
     pub fn clear_highlight_cache(&mut self) {
@@ -211,19 +238,52 @@ impl AppState {
     }
 
     pub fn get_cached_height(&self, message_id: Uuid, viewport_width: u16) -> Option<usize> {
-        self.height_cache.get(&(message_id, viewport_width)).copied()
+        let (tree_id, branch_id) = self.current_cache_context()?;
+        self.height_cache.get(&(tree_id, branch_id, message_id, viewport_width)).copied()
     }
 
     pub fn cache_height(&mut self, message_id: Uuid, viewport_width: u16, height: usize) {
-        self.height_cache.insert((message_id, viewport_width), height);
+        if let Some((tree_id, branch_id)) = self.current_cache_context() {
+            self.height_cache.insert((tree_id, branch_id, message_id, viewport_width), height);
+        }
     }
 
     pub fn invalidate_message_height(&mut self, message_id: Uuid) {
-        self.height_cache.retain(|(id, _), _| *id != message_id);
+        if let Some((tree_id, branch_id)) = self.current_cache_context() {
+            self.height_cache.retain(|(t_id, b_id, m_id, _), _| 
+                !(*t_id == tree_id && *b_id == branch_id && *m_id == message_id));
+        }
     }
 
     pub fn clear_height_cache(&mut self) {
         self.height_cache.clear();
+    }
+
+    pub fn populate_caches_for_current_branch(&mut self, viewport_width: u16) {
+        let message_data: Vec<(uuid::Uuid, String)> = self.current_messages()
+            .iter()
+            .map(|msg| (msg.id(), msg.content().to_string()))
+            .collect();
+
+        for (message_id, content) in message_data {
+            if !self.has_cached_highlight(message_id) {
+                let highlighted_text = crate::ui::normal_mode::highlighting::highlight_markdown(&content);
+                self.cache_highlighted_text(message_id, highlighted_text);
+            }
+
+            if self.get_cached_height(message_id, viewport_width).is_none() {
+                let text = self.get_cached_highlighted_text(message_id)
+                    .unwrap_or_else(|| ratatui::text::Text::raw(content));
+                
+                let block = ratatui::widgets::Block::default().borders(ratatui::widgets::Borders::ALL);
+                let paragraph = ratatui::widgets::Paragraph::new(text)
+                    .block(block)
+                    .wrap(ratatui::widgets::Wrap { trim: false });
+                
+                let height = paragraph.line_count(viewport_width);
+                self.cache_height(message_id, viewport_width, height);
+            }
+        }
     }
 
     pub fn is_append_mode(&self) -> bool {
