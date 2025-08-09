@@ -6,7 +6,25 @@ pub struct AppendModeLayout {
 }
 
 pub fn calculate_append_layout(area: Rect, textarea_height: u16) -> AppendModeLayout {
-    let history_height = area.height.saturating_sub(textarea_height);
+    // If textarea needs more space than available content area, give it the full area
+    if textarea_height >= area.height {
+        return AppendModeLayout {
+            history: Rect {
+                x: area.x,
+                y: area.y,
+                width: area.width,
+                height: 0,
+            },
+            textarea: Rect {
+                x: area.x,
+                y: area.y,
+                width: area.width,
+                height: area.height, // Give textarea the full content area height
+            },
+        };
+    }
+    
+    let history_height = area.height - textarea_height;
     
     AppendModeLayout {
         history: Rect {
