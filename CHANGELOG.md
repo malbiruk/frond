@@ -10,9 +10,7 @@ All notable changes to Frond will be documented in this file.
 - Added hierarchical caching system for improved rendering performance
 - Added edit and append modes for message modification
 - Added system clipboard integration with fallback to internal clipboard
-- Added text selection operations (select line, select to top/bottom)
-- Added delete line operation (ctrl-k)
-- Added dynamic scrollbar updates in edit mode
+- Added text selection operations
 - Refactored edit mode handler into modular submodules
 
 #### 2025-08-06
