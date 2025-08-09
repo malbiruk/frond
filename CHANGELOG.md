@@ -7,6 +7,7 @@ All notable changes to Frond will be documented in this file.
 ### frond-tui
 
 #### 2025-08-09
+- Added hierarchical caching system for improved rendering performance
 - Added edit and append modes for message modification
 - Added system clipboard integration with fallback to internal clipboard
 - Added text selection operations (select line, select to top/bottom)
