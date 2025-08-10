@@ -1,5 +1,5 @@
-use crate::app::state::AppState;
 use crate::app::Mode;
+use crate::app::state::AppState;
 use crate::services::DialogueService;
 use ratatui::crossterm::event::KeyEvent;
 
@@ -18,22 +18,14 @@ pub fn handle_exit_current_mode(state: &mut AppState) {
             return; // Stay in edit mode, just cancel selection
         }
     }
-    
+
     // No selection active, proceed with normal exit behavior
     exit_to_normal_mode(state);
 }
 
 fn exit_to_normal_mode(state: &mut AppState) {
     // Check if we're in append mode before processing (editing last User message)
-    let is_append_mode = if let Some(message_id) = state.focused_message_id {
-        state
-            .current_branch()
-            .and_then(|branch| branch.messages().iter().last())
-            .map(|last| last.id() == message_id && *last.role() == frond_core::Role::User)
-            .unwrap_or(false)
-    } else {
-        false
-    };
+    let is_append_mode = state.is_append_mode();
 
     if let (Some(textarea), Some(message_id), Some(branch_id)) = (
         &state.edit_textarea,
@@ -52,6 +44,7 @@ fn exit_to_normal_mode(state: &mut AppState) {
             }
             // Invalidate cache for deleted message
             state.invalidate_message_highlight(message_id);
+            state.invalidate_message_height(message_id);
             if let Some(index) = state.get_message_index(message_id) {
                 state.update_focused_message_after_deletion(index);
             }
@@ -63,6 +56,7 @@ fn exit_to_normal_mode(state: &mut AppState) {
         } else {
             // Invalidate cache for edited message
             state.invalidate_message_highlight(message_id);
+            state.invalidate_message_height(message_id);
         }
     }
 

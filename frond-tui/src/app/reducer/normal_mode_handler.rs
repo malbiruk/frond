@@ -207,6 +207,7 @@ fn handle_delete_message(state: &mut AppState) {
             Ok(_) => {
                 // Invalidate cache for deleted message
                 state.invalidate_message_highlight(message_id);
+                state.invalidate_message_height(message_id);
                 if let Some(index) = message_index {
                     state.update_focused_message_after_deletion(index);
                 }
