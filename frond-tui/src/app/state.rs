@@ -118,6 +118,26 @@ impl AppState {
 
     // Internal helper methods - not user actions
     pub fn focus_message(&mut self, message_id: Uuid) {
+        // Find which tree and branch contain this message
+        let mut found_tree_id = None;
+        let mut found_branch_id = None;
+        
+        'outer: for tree in self.dialogue.trees().iter() {
+            for branch in tree.branches().iter() {
+                if branch.get_message_by_id(message_id).is_some() {
+                    found_tree_id = Some(tree.id());
+                    found_branch_id = Some(branch.id());
+                    break 'outer;
+                }
+            }
+        }
+        
+        // Switch to the tree and branch containing the message
+        if let (Some(tree_id), Some(branch_id)) = (found_tree_id, found_branch_id) {
+            self.current_tree_id = Some(tree_id);
+            self.current_branch_id = Some(branch_id);
+        }
+        
         // Request focus - will be resolved during render with real viewport
         self.pending_scrolling_request = Some(ScrollingRequest::ScrollToMessage(message_id));
     }
