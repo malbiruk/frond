@@ -90,8 +90,6 @@ pub fn default_keybindings_string_map() -> HashMap<String, HashMap<String, Strin
                 // Cursor movement - document boundaries
                 ("move_cursor_top", "ctrl-home"),
                 ("move_cursor_bottom", "ctrl-end"),
-                // Cursor movement - viewport
-                ("move_cursor_in_viewport", "f2"),
                 // Help
                 ("show_help", "f1"),
             ],
