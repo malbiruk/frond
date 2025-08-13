@@ -5,7 +5,7 @@
 
 use frond::app::Mode;
 use frond::config::{
-    Config, Keybindings, Theme, keybindings::parse_key_chord, keybindings::parse_mode,
+    Config, Keybindings, Theme, keybindings::parse_key_chord, keybindings::parse_mode, keybindings::DefaultKeybinding,
 };
 use frond::input::KeyChord;
 use ratatui::crossterm::event::{KeyCode, KeyModifiers};
@@ -228,32 +228,33 @@ fn keybindings_default_contains_expected_mappings() {
     assert!(normal_bindings.contains_key("next_branch"));
     assert!(normal_bindings.contains_key("quit"));
 
-    // Test specific key mappings
+    // Test specific key mappings (check first key in Vec)
     assert_eq!(
-        normal_bindings.get("edit_message").unwrap().key,
+        normal_bindings.get("edit_message").unwrap()[0].key,
         KeyCode::Char('e')
     );
     assert_eq!(
-        normal_bindings.get("delete_message").unwrap().key,
+        normal_bindings.get("delete_message").unwrap()[0].key,
         KeyCode::Char('d')
     );
-    assert_eq!(normal_bindings.get("scroll_up").unwrap().key, KeyCode::Up);
+    assert_eq!(normal_bindings.get("scroll_up").unwrap()[0].key, KeyCode::Up);
     assert_eq!(
-        normal_bindings.get("scroll_down").unwrap().key,
+        normal_bindings.get("scroll_down").unwrap()[0].key,
         KeyCode::Down
     );
 }
 
 #[test]
-fn keybindings_get_key_for_action_works() {
+fn keybindings_get_keys_for_action_works() {
     let keybindings = Keybindings::default();
 
-    let key = keybindings.get_key_for_action(Mode::Normal, "edit_message");
-    assert!(key.is_some());
-    assert_eq!(key.unwrap().key, KeyCode::Char('e'));
+    let keys = keybindings.get_keys_for_action(Mode::Normal, "edit_message");
+    assert!(keys.is_some());
+    assert!(!keys.unwrap().is_empty());
+    assert_eq!(keys.unwrap()[0].key, KeyCode::Char('e'));
 
-    let key = keybindings.get_key_for_action(Mode::Normal, "nonexistent_action");
-    assert!(key.is_none());
+    let keys = keybindings.get_keys_for_action(Mode::Normal, "nonexistent_action");
+    assert!(keys.is_none());
 }
 
 #[test]
@@ -268,45 +269,48 @@ fn keybindings_get_action_for_key_works() {
 }
 
 #[test]
-fn keybindings_set_key_for_action_updates_mapping() {
+fn keybindings_set_keys_for_action_updates_mapping() {
     let mut keybindings = Keybindings::default();
 
-    let new_key = KeyChord::char('x');
-    keybindings.set_key_for_action(Mode::Normal, "edit_message".to_string(), new_key.clone());
+    let new_keys = vec![KeyChord::char('x'), KeyChord::char('y')];
+    keybindings.set_keys_for_action(Mode::Normal, "edit_message".to_string(), new_keys.clone());
 
-    let retrieved_key = keybindings.get_key_for_action(Mode::Normal, "edit_message");
-    assert_eq!(retrieved_key, Some(&new_key));
+    let retrieved_keys = keybindings.get_keys_for_action(Mode::Normal, "edit_message");
+    assert_eq!(retrieved_keys, Some(&new_keys));
 
-    let action = keybindings.get_action_for_key(Mode::Normal, &new_key);
+    let action = keybindings.get_action_for_key(Mode::Normal, &new_keys[0]);
+    assert_eq!(action, Some("edit_message".to_string()));
+    
+    let action = keybindings.get_action_for_key(Mode::Normal, &new_keys[1]);
     assert_eq!(action, Some("edit_message".to_string()));
 }
 
 #[test]
-fn keybindings_from_string_map_parses_correctly() {
-    let mut string_map = HashMap::new();
+fn keybindings_from_config_parses_correctly() {
+    let mut config_map = HashMap::new();
     let mut normal_actions = HashMap::new();
-    normal_actions.insert("edit_message".to_string(), "ctrl-e".to_string());
-    normal_actions.insert("delete_message".to_string(), "shift-d".to_string());
-    string_map.insert("normal".to_string(), normal_actions);
+    normal_actions.insert("edit_message".to_string(), DefaultKeybinding::Single("ctrl-e"));
+    normal_actions.insert("delete_message".to_string(), DefaultKeybinding::Single("shift-d"));
+    config_map.insert("normal".to_string(), normal_actions);
 
-    let result = Keybindings::from_string_map(string_map);
+    let result = Keybindings::from_config(config_map);
     assert!(result.is_ok());
 
     let keybindings = result.unwrap();
-    let edit_key = keybindings.get_key_for_action(Mode::Normal, "edit_message");
-    assert!(edit_key.is_some());
-    assert_eq!(edit_key.unwrap().key, KeyCode::Char('e'));
-    assert!(edit_key.unwrap().modifiers.contains(KeyModifiers::CONTROL));
+    let edit_keys = keybindings.get_keys_for_action(Mode::Normal, "edit_message");
+    assert!(edit_keys.is_some());
+    assert_eq!(edit_keys.unwrap()[0].key, KeyCode::Char('e'));
+    assert!(edit_keys.unwrap()[0].modifiers.contains(KeyModifiers::CONTROL));
 }
 
 #[test]
-fn keybindings_from_string_map_handles_invalid_input() {
-    let mut string_map = HashMap::new();
+fn keybindings_from_config_handles_invalid_input() {
+    let mut config_map = HashMap::new();
     let mut invalid_actions = HashMap::new();
-    invalid_actions.insert("test_action".to_string(), "invalid-key".to_string());
-    string_map.insert("normal".to_string(), invalid_actions);
+    invalid_actions.insert("test_action".to_string(), DefaultKeybinding::Single("invalid-key"));
+    config_map.insert("normal".to_string(), invalid_actions);
 
-    let result = Keybindings::from_string_map(string_map);
+    let result = Keybindings::from_config(config_map);
     assert!(result.is_err());
 }
 
@@ -315,9 +319,9 @@ fn keybindings_edit_mode_has_exit_mapping() {
     let keybindings = Keybindings::default();
 
     let edit_mode = Mode::Edit;
-    let exit_key = keybindings.get_key_for_action(edit_mode, "exit_mode");
-    assert!(exit_key.is_some());
-    assert_eq!(exit_key.unwrap().key, KeyCode::Esc);
+    let exit_keys = keybindings.get_keys_for_action(edit_mode, "exit_mode");
+    assert!(exit_keys.is_some());
+    assert_eq!(exit_keys.unwrap()[0].key, KeyCode::Esc);
 }
 
 // Config Integration Tests
@@ -339,33 +343,33 @@ fn config_default_creates_valid_configuration() {
 }
 
 #[test]
-fn config_get_key_for_action_works_across_modes() {
+fn config_get_keys_for_action_works_across_modes() {
     let config = Config::default();
 
     // Normal mode action
-    let key = config.get_key_for_action(Mode::Normal, "edit_message");
-    assert!(key.is_some());
-    assert_eq!(key.unwrap().key, KeyCode::Char('e'));
+    let keys = config.get_keys_for_action(Mode::Normal, "edit_message");
+    assert!(keys.is_some());
+    assert_eq!(keys.unwrap()[0].key, KeyCode::Char('e'));
 
     // Edit mode action
-    let key = config.get_key_for_action(Mode::Edit, "exit_mode");
-    assert!(key.is_some());
-    assert_eq!(key.unwrap().key, KeyCode::Esc);
+    let keys = config.get_keys_for_action(Mode::Edit, "exit_mode");
+    assert!(keys.is_some());
+    assert_eq!(keys.unwrap()[0].key, KeyCode::Esc);
 
     // Non-existent action
-    let key = config.get_key_for_action(Mode::Normal, "nonexistent");
-    assert!(key.is_none());
+    let keys = config.get_keys_for_action(Mode::Normal, "nonexistent");
+    assert!(keys.is_none());
 }
 
 #[test]
-fn config_set_key_for_action_updates_keybindings() {
+fn config_set_keys_for_action_updates_keybindings() {
     let mut config = Config::default();
 
-    let new_key = KeyChord::ctrl('x');
-    config.set_key_for_action(Mode::Normal, "edit_message".to_string(), new_key.clone());
+    let new_keys = vec![KeyChord::ctrl('x')];
+    config.set_keys_for_action(Mode::Normal, "edit_message".to_string(), new_keys.clone());
 
-    let retrieved_key = config.get_key_for_action(Mode::Normal, "edit_message");
-    assert_eq!(retrieved_key, Some(&new_key));
+    let retrieved_keys = config.get_keys_for_action(Mode::Normal, "edit_message");
+    assert_eq!(retrieved_keys, Some(&new_keys));
 }
 
 // Theme Tests
@@ -397,8 +401,8 @@ fn keybinding_with_conflicting_keys_handles_gracefully() {
     let key = KeyChord::char('x');
 
     // Set the same key for different actions
-    keybindings.set_key_for_action(Mode::Normal, "action1".to_string(), key.clone());
-    keybindings.set_key_for_action(Mode::Normal, "action2".to_string(), key.clone());
+    keybindings.set_keys_for_action(Mode::Normal, "action1".to_string(), vec![key.clone()]);
+    keybindings.set_keys_for_action(Mode::Normal, "action2".to_string(), vec![key.clone()]);
 
     // Should resolve to one of the actions (HashMap behavior with duplicate keys)
     let action = keybindings.get_action_for_key(Mode::Normal, &key);
@@ -410,13 +414,13 @@ fn config_handles_mode_specific_keybindings() {
     let config = Config::default();
 
     // Same action ID should work in different modes if bound
-    let normal_exit = config.get_key_for_action(Mode::Normal, "quit");
-    let edit_exit = config.get_key_for_action(Mode::Edit, "exit_mode");
+    let normal_exit = config.get_keys_for_action(Mode::Normal, "quit");
+    let edit_exit = config.get_keys_for_action(Mode::Edit, "exit_mode");
 
     assert!(normal_exit.is_some());
     assert!(edit_exit.is_some());
     // They should be different keys
-    assert_ne!(normal_exit.unwrap().key, edit_exit.unwrap().key);
+    assert_ne!(normal_exit.unwrap()[0].key, edit_exit.unwrap()[0].key);
 }
 
 #[test]
@@ -424,11 +428,11 @@ fn keybindings_mode_isolation_works() {
     let mut keybindings = Keybindings::default();
 
     let key = KeyChord::char('t');
-    keybindings.set_key_for_action(Mode::Normal, "test_normal".to_string(), key.clone());
-    keybindings.set_key_for_action(
+    keybindings.set_keys_for_action(Mode::Normal, "test_normal".to_string(), vec![key.clone()]);
+    keybindings.set_keys_for_action(
         Mode::Edit,
         "test_edit".to_string(),
-        key.clone(),
+        vec![key.clone()],
     );
 
     // Same key should resolve to different actions in different modes

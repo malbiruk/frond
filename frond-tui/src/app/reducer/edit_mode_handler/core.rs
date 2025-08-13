@@ -8,7 +8,7 @@ use ratatui::crossterm::event::KeyEvent;
 /// Handle raw key input in edit mode (for TextArea character input)
 pub fn handle_edit_mode_raw_input(state: &mut AppState, key_event: KeyEvent) {
     if let Some(ref mut textarea) = state.edit_textarea {
-        textarea.input(key_event);
+        textarea.input_without_shortcuts(key_event);
     }
 }
 

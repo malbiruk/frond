@@ -200,6 +200,23 @@ fn shift_keys_handled_gracefully() {
     // Should handle gracefully (may or may not produce action)
 }
 
+#[test]
+fn uppercase_h_and_l_work_in_normal_mode() {
+    let config = Config::default();
+    let handler = InputHandler::new(&config);
+
+    // Test that uppercase H and L work (they should map to tree navigation)
+    let shift_h = KeyEvent::new(KeyCode::Char('H'), KeyModifiers::SHIFT);
+    let shift_l = KeyEvent::new(KeyCode::Char('L'), KeyModifiers::SHIFT);
+    
+    let h_action = handler.handle_input(shift_h, Mode::Normal);
+    let l_action = handler.handle_input(shift_l, Mode::Normal);
+
+    // Both should produce actions since they're defined in the default config as "H" and "L"
+    assert!(h_action.is_some(), "Shift+H should produce an action");
+    assert!(l_action.is_some(), "Shift+L should produce an action");
+}
+
 // === Essential Actions Discovery ===
 
 #[test]

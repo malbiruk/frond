@@ -46,8 +46,10 @@ impl KeyMapping {
         // Build reverse mapping: KeyChord -> Action ID
         for (mode, action_bindings) in &config.keybindings.mode_bindings {
             let mut key_to_action = HashMap::new();
-            for (action_id, key_chord) in action_bindings {
-                key_to_action.insert(key_chord.clone(), action_id.clone());
+            for (action_id, key_chords) in action_bindings {
+                for key_chord in key_chords {
+                    key_to_action.insert(key_chord.clone(), action_id.clone());
+                }
             }
             mode_mappings.insert(*mode, key_to_action);
         }
@@ -57,7 +59,27 @@ impl KeyMapping {
 
     pub fn get_action_id(&self, mode: Mode, key_event: KeyEvent) -> Option<String> {
         let chord = KeyChord::new(key_event.code, key_event.modifiers);
-        self.mode_mappings.get(&mode)?.get(&chord).cloned()
+        
+        // First try exact match
+        if let Some(action_id) = self.mode_mappings.get(&mode)?.get(&chord).cloned() {
+            return Some(action_id);
+        }
+        
+        // For uppercase letters with SHIFT, also try without SHIFT modifier
+        // This handles cases where config defines "H" but terminal sends 'H' + SHIFT
+        if let KeyCode::Char(ch) = key_event.code {
+            if ch.is_ascii_uppercase() && key_event.modifiers.contains(KeyModifiers::SHIFT) {
+                let normalized_chord = KeyChord::new(
+                    KeyCode::Char(ch), 
+                    key_event.modifiers & !KeyModifiers::SHIFT // Remove SHIFT
+                );
+                if let Some(action_id) = self.mode_mappings.get(&mode)?.get(&normalized_chord).cloned() {
+                    return Some(action_id);
+                }
+            }
+        }
+        
+        None
     }
 }
 
