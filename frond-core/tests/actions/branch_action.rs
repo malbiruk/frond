@@ -107,8 +107,10 @@ fn append_message() {
 
     let branch_id = dialogue.get_tree_by_id(tree_id).unwrap().branches()[0].id();
 
+    let message_id = uuid::Uuid::new_v4();
     let action = Action::Branch(BranchAction::AppendMessage {
         branch_id,
+        message_id,
         message_content: "Hello world".to_string(),
     });
 
@@ -137,12 +139,16 @@ fn insert_message_at_index() {
     let branch_id = dialogue.get_tree_by_id(tree_id).unwrap().branches()[0].id();
 
     // Add some messages first
+    let message_id1 = uuid::Uuid::new_v4();
     let append_action1 = Action::Branch(BranchAction::AppendMessage {
         branch_id,
+        message_id: message_id1,
         message_content: "First".to_string(),
     });
+    let message_id2 = uuid::Uuid::new_v4();
     let append_action2 = Action::Branch(BranchAction::AppendMessage {
         branch_id,
+        message_id: message_id2,
         message_content: "Third".to_string(),
     });
     dialogue.apply_action(append_action1).unwrap();
@@ -183,10 +189,12 @@ fn remove_message_by_id() {
     // Add some messages
     let append_action1 = Action::Branch(BranchAction::AppendMessage {
         branch_id,
+        message_id: uuid::Uuid::new_v4(),
         message_content: "First".to_string(),
     });
     let append_action2 = Action::Branch(BranchAction::AppendMessage {
         branch_id,
+        message_id: uuid::Uuid::new_v4(),
         message_content: "Second".to_string(),
     });
     dialogue.apply_action(append_action1).unwrap();
@@ -229,10 +237,12 @@ fn clear_messages() {
     // Add some messages
     let append_action1 = Action::Branch(BranchAction::AppendMessage {
         branch_id,
+        message_id: uuid::Uuid::new_v4(),
         message_content: "First".to_string(),
     });
     let append_action2 = Action::Branch(BranchAction::AppendMessage {
         branch_id,
+        message_id: uuid::Uuid::new_v4(),
         message_content: "Second".to_string(),
     });
     dialogue.apply_action(append_action1).unwrap();
@@ -279,10 +289,12 @@ fn multiple_branches_different_trees() {
     // Add messages to both branches
     let append_action1 = Action::Branch(BranchAction::AppendMessage {
         branch_id: branch1_id,
+        message_id: uuid::Uuid::new_v4(),
         message_content: "Hello from tree1".to_string(),
     });
     let append_action2 = Action::Branch(BranchAction::AppendMessage {
         branch_id: branch2_id,
+        message_id: uuid::Uuid::new_v4(),
         message_content: "Hello from tree2".to_string(),
     });
     dialogue.apply_action(append_action1).unwrap();

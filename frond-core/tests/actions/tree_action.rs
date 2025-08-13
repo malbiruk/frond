@@ -80,10 +80,12 @@ fn fork_branch() {
     // Add messages to the branch
     let append_action1 = Action::Branch(BranchAction::AppendMessage {
         branch_id,
+        message_id: uuid::Uuid::new_v4(),
         message_content: "Hello".to_string(),
     });
     let append_action2 = Action::Branch(BranchAction::AppendMessage {
         branch_id,
+        message_id: uuid::Uuid::new_v4(),
         message_content: "Hi there".to_string(),
     });
     dialogue.apply_action(append_action1).unwrap();

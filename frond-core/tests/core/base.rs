@@ -26,6 +26,7 @@ fn can_create_dialogue_tree_branch_and_messages() {
     dialogue
         .apply_action(Action::Branch(BranchAction::AppendMessage {
             branch_id,
+            message_id: uuid::Uuid::new_v4(),
             message_content: "Hello, LLM!".to_string(),
         }))
         .unwrap();
@@ -33,6 +34,7 @@ fn can_create_dialogue_tree_branch_and_messages() {
     dialogue
         .apply_action(Action::Branch(BranchAction::AppendMessage {
             branch_id,
+            message_id: uuid::Uuid::new_v4(),
             message_content: "Hi, user!".to_string(),
         }))
         .unwrap();
@@ -69,6 +71,7 @@ fn can_fork_branch_from_message() {
     dialogue
         .apply_action(Action::Branch(BranchAction::AppendMessage {
             branch_id,
+            message_id: uuid::Uuid::new_v4(),
             message_content: "First".to_string(),
         }))
         .unwrap();
@@ -76,6 +79,7 @@ fn can_fork_branch_from_message() {
     dialogue
         .apply_action(Action::Branch(BranchAction::AppendMessage {
             branch_id,
+            message_id: uuid::Uuid::new_v4(),
             message_content: "Second".to_string(),
         }))
         .unwrap();
@@ -126,6 +130,7 @@ fn hidden_messages_are_excluded_from_context() {
     dialogue
         .apply_action(Action::Branch(BranchAction::AppendMessage {
             branch_id,
+            message_id: uuid::Uuid::new_v4(),
             message_content: "Visible".to_string(),
         }))
         .unwrap();
@@ -133,6 +138,7 @@ fn hidden_messages_are_excluded_from_context() {
     dialogue
         .apply_action(Action::Branch(BranchAction::AppendMessage {
             branch_id,
+            message_id: uuid::Uuid::new_v4(),
             message_content: "Hidden".to_string(),
         }))
         .unwrap();

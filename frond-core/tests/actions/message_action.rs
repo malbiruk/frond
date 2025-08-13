@@ -19,6 +19,7 @@ fn edit_message() {
     // Add a message
     let append_action = Action::Branch(BranchAction::AppendMessage {
         branch_id,
+        message_id: uuid::Uuid::new_v4(),
         message_content: "Hello world".to_string(),
     });
     dialogue.apply_action(append_action).unwrap();
@@ -57,6 +58,7 @@ fn delete_message() {
     // Add a message
     let append_action = Action::Branch(BranchAction::AppendMessage {
         branch_id,
+        message_id: uuid::Uuid::new_v4(),
         message_content: "Hello world".to_string(),
     });
     dialogue.apply_action(append_action).unwrap();
@@ -96,6 +98,7 @@ fn hide_message() {
     // Add a message
     let append_action = Action::Branch(BranchAction::AppendMessage {
         branch_id,
+        message_id: uuid::Uuid::new_v4(),
         message_content: "Hello world".to_string(),
     });
     dialogue.apply_action(append_action).unwrap();
@@ -130,6 +133,7 @@ fn show_message() {
     // Add a message
     let append_action = Action::Branch(BranchAction::AppendMessage {
         branch_id,
+        message_id: uuid::Uuid::new_v4(),
         message_content: "Hello world".to_string(),
     });
     dialogue.apply_action(append_action).unwrap();
@@ -168,6 +172,7 @@ fn toggle_message_role() {
     // Add a message
     let append_action = Action::Branch(BranchAction::AppendMessage {
         branch_id,
+        message_id: uuid::Uuid::new_v4(),
         message_content: "Hello world".to_string(),
     });
     dialogue.apply_action(append_action).unwrap();
@@ -205,6 +210,7 @@ fn toggle_message_role_twice() {
     // Add a message
     let append_action = Action::Branch(BranchAction::AppendMessage {
         branch_id,
+        message_id: uuid::Uuid::new_v4(),
         message_content: "Hello world".to_string(),
     });
     dialogue.apply_action(append_action).unwrap();
@@ -243,10 +249,12 @@ fn message_actions_with_context() {
     // Add multiple messages
     let append_action1 = Action::Branch(BranchAction::AppendMessage {
         branch_id,
+        message_id: uuid::Uuid::new_v4(),
         message_content: "Visible message".to_string(),
     });
     let append_action2 = Action::Branch(BranchAction::AppendMessage {
         branch_id,
+        message_id: uuid::Uuid::new_v4(),
         message_content: "Hidden message".to_string(),
     });
     dialogue.apply_action(append_action1).unwrap();

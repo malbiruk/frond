@@ -50,7 +50,7 @@ fn parse_key_chord_handles_special_keys() {
         ("enter", KeyCode::Enter),
         ("tab", KeyCode::Tab),
         ("backspace", KeyCode::Backspace),
-        ("delete", KeyCode::Delete),
+        ("del", KeyCode::Delete),
         ("home", KeyCode::Home),
         ("end", KeyCode::End),
         ("pgup", KeyCode::PageUp),
@@ -272,7 +272,7 @@ fn keybindings_get_action_for_key_works() {
 fn keybindings_set_keys_for_action_updates_mapping() {
     let mut keybindings = Keybindings::default();
 
-    let new_keys = vec![KeyChord::char('x'), KeyChord::char('y')];
+    let new_keys = vec![KeyChord::char('z'), KeyChord::char('w')];
     keybindings.set_keys_for_action(Mode::Normal, "edit_message".to_string(), new_keys.clone());
 
     let retrieved_keys = keybindings.get_keys_for_action(Mode::Normal, "edit_message");
@@ -398,7 +398,7 @@ fn theme_contains_required_fields() {
 fn keybinding_with_conflicting_keys_handles_gracefully() {
     let mut keybindings = Keybindings::default();
 
-    let key = KeyChord::char('x');
+    let key = KeyChord::char('z');
 
     // Set the same key for different actions
     keybindings.set_keys_for_action(Mode::Normal, "action1".to_string(), vec![key.clone()]);

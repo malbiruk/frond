@@ -423,3 +423,291 @@ fn app_state_navigation_consistency_across_operations() {
         );
     }
 }
+
+// === Cross-Tree/Branch Focus Tests ===
+
+fn create_multi_tree_dialogue() -> Dialogue {
+    let mut dialogue = Dialogue::new("Multi-Tree Test");
+    
+    // Create first tree with two branches
+    let mut tree1 = Tree::new("Tree 1");
+    let mut branch1a = Branch::new("branch-1a");
+    let mut branch1b = Branch::new("branch-1b");
+    
+    branch1a.add_message(Message::new("Tree1 Branch1A Message1", Role::User));
+    branch1a.add_message(Message::new("Tree1 Branch1A Message2", Role::Assistant));
+    
+    branch1b.add_message(Message::new("Tree1 Branch1B Message1", Role::User));
+    
+    tree1.add_branch(branch1a);
+    tree1.add_branch(branch1b);
+    
+    // Create second tree with one branch
+    let mut tree2 = Tree::new("Tree 2");
+    let mut branch2a = Branch::new("branch-2a");
+    
+    branch2a.add_message(Message::new("Tree2 Branch2A Message1", Role::User));
+    branch2a.add_message(Message::new("Tree2 Branch2A Message2", Role::Assistant));
+    branch2a.add_message(Message::new("Tree2 Branch2A Message3", Role::User));
+    
+    tree2.add_branch(branch2a);
+    
+    dialogue.add_tree(tree1);
+    dialogue.add_tree(tree2);
+    dialogue
+}
+
+#[test]
+fn focus_message_switches_to_correct_tree_and_branch() {
+    let dialogue = create_multi_tree_dialogue();
+    let mut state = AppState {
+        dialogue,
+        mode: Mode::Normal,
+        current_tree_id: None,
+        current_branch_id: None,
+        focused_message_id: None,
+        scroll_offset: 0,
+        pending_scrolling_request: None,
+        error_message: None,
+        edit_textarea: None,
+        highlight_cache: Default::default(),
+        height_cache: Default::default(),
+        config: Config::default(),
+        model_info: ModelInfo::default(),
+        scrollbar_state: Default::default(),
+    };
+
+    // Start with first tree, first branch
+    let tree1_id = state.dialogue.trees()[0].id();
+    let branch1a_id = state.dialogue.trees()[0].branches()[0].id();
+    state.current_tree_id = Some(tree1_id);
+    state.current_branch_id = Some(branch1a_id);
+
+    // Get a message from the second tree, different branch
+    let tree2_id = state.dialogue.trees()[1].id();
+    let branch2a_id = state.dialogue.trees()[1].branches()[0].id();
+    let message_in_tree2 = state.dialogue.trees()[1].branches()[0].messages()[1].id();
+
+    // Focus on message in different tree
+    state.focus_message(message_in_tree2);
+
+    // Should switch to the correct tree and branch
+    assert_eq!(state.current_tree_id, Some(tree2_id));
+    assert_eq!(state.current_branch_id, Some(branch2a_id));
+    
+    // Should request scroll to the message
+    use frond::app::state::ScrollingRequest;
+    assert_eq!(
+        state.pending_scrolling_request,
+        Some(ScrollingRequest::ScrollToMessage(message_in_tree2))
+    );
+}
+
+#[test]
+fn focus_message_switches_to_different_branch_same_tree() {
+    let dialogue = create_multi_tree_dialogue();
+    let mut state = AppState {
+        dialogue,
+        mode: Mode::Normal,
+        current_tree_id: None,
+        current_branch_id: None,
+        focused_message_id: None,
+        scroll_offset: 0,
+        pending_scrolling_request: None,
+        error_message: None,
+        edit_textarea: None,
+        highlight_cache: Default::default(),
+        height_cache: Default::default(),
+        config: Config::default(),
+        model_info: ModelInfo::default(),
+        scrollbar_state: Default::default(),
+    };
+
+    // Start with first tree, first branch
+    let tree1_id = state.dialogue.trees()[0].id();
+    let branch1a_id = state.dialogue.trees()[0].branches()[0].id();
+    let branch1b_id = state.dialogue.trees()[0].branches()[1].id();
+    state.current_tree_id = Some(tree1_id);
+    state.current_branch_id = Some(branch1a_id);
+
+    // Get a message from the same tree but different branch
+    let message_in_branch1b = state.dialogue.trees()[0].branches()[1].messages()[0].id();
+
+    // Focus on message in different branch
+    state.focus_message(message_in_branch1b);
+
+    // Should stay in same tree but switch branch
+    assert_eq!(state.current_tree_id, Some(tree1_id));
+    assert_eq!(state.current_branch_id, Some(branch1b_id));
+    
+    // Should request scroll to the message
+    use frond::app::state::ScrollingRequest;
+    assert_eq!(
+        state.pending_scrolling_request,
+        Some(ScrollingRequest::ScrollToMessage(message_in_branch1b))
+    );
+}
+
+#[test]
+fn focus_message_handles_message_in_current_context() {
+    let dialogue = create_multi_tree_dialogue();
+    let mut state = AppState {
+        dialogue,
+        mode: Mode::Normal,
+        current_tree_id: None,
+        current_branch_id: None,
+        focused_message_id: None,
+        scroll_offset: 0,
+        pending_scrolling_request: None,
+        error_message: None,
+        edit_textarea: None,
+        highlight_cache: Default::default(),
+        height_cache: Default::default(),
+        config: Config::default(),
+        model_info: ModelInfo::default(),
+        scrollbar_state: Default::default(),
+    };
+
+    // Set up current context
+    let tree1_id = state.dialogue.trees()[0].id();
+    let branch1a_id = state.dialogue.trees()[0].branches()[0].id();
+    state.current_tree_id = Some(tree1_id);
+    state.current_branch_id = Some(branch1a_id);
+
+    // Focus on message in current branch
+    let message_in_current_branch = state.dialogue.trees()[0].branches()[0].messages()[0].id();
+    state.focus_message(message_in_current_branch);
+
+    // Should stay in same context
+    assert_eq!(state.current_tree_id, Some(tree1_id));
+    assert_eq!(state.current_branch_id, Some(branch1a_id));
+    
+    // Should still request scroll to the message
+    use frond::app::state::ScrollingRequest;
+    assert_eq!(
+        state.pending_scrolling_request,
+        Some(ScrollingRequest::ScrollToMessage(message_in_current_branch))
+    );
+}
+
+#[test]
+fn focus_message_handles_nonexistent_message() {
+    let dialogue = create_multi_tree_dialogue();
+    let mut state = AppState {
+        dialogue,
+        mode: Mode::Normal,
+        current_tree_id: None,
+        current_branch_id: None,
+        focused_message_id: None,
+        scroll_offset: 0,
+        pending_scrolling_request: None,
+        error_message: None,
+        edit_textarea: None,
+        highlight_cache: Default::default(),
+        height_cache: Default::default(),
+        config: Config::default(),
+        model_info: ModelInfo::default(),
+        scrollbar_state: Default::default(),
+    };
+
+    // Set up current context
+    let tree1_id = state.dialogue.trees()[0].id();
+    let branch1a_id = state.dialogue.trees()[0].branches()[0].id();
+    state.current_tree_id = Some(tree1_id);
+    state.current_branch_id = Some(branch1a_id);
+
+    let original_tree = state.current_tree_id;
+    let original_branch = state.current_branch_id;
+
+    // Try to focus on nonexistent message
+    let fake_message_id = Uuid::new_v4();
+    state.focus_message(fake_message_id);
+
+    // Should not change current context
+    assert_eq!(state.current_tree_id, original_tree);
+    assert_eq!(state.current_branch_id, original_branch);
+    
+    // Should still request scroll (will fail gracefully during rendering)
+    use frond::app::state::ScrollingRequest;
+    assert_eq!(
+        state.pending_scrolling_request,
+        Some(ScrollingRequest::ScrollToMessage(fake_message_id))
+    );
+}
+
+#[test]
+fn focus_message_searches_all_trees_and_branches() {
+    let dialogue = create_multi_tree_dialogue();
+    let mut state = AppState {
+        dialogue,
+        mode: Mode::Normal,
+        current_tree_id: None,
+        current_branch_id: None,
+        focused_message_id: None,
+        scroll_offset: 0,
+        pending_scrolling_request: None,
+        error_message: None,
+        edit_textarea: None,
+        highlight_cache: Default::default(),
+        height_cache: Default::default(),
+        config: Config::default(),
+        model_info: ModelInfo::default(),
+        scrollbar_state: Default::default(),
+    };
+
+    // Start with second tree
+    let tree2_id = state.dialogue.trees()[1].id();
+    let branch2a_id = state.dialogue.trees()[1].branches()[0].id();
+    state.current_tree_id = Some(tree2_id);
+    state.current_branch_id = Some(branch2a_id);
+
+    // Focus on first message in first tree, second branch
+    let tree1_id = state.dialogue.trees()[0].id();
+    let branch1b_id = state.dialogue.trees()[0].branches()[1].id();
+    let target_message = state.dialogue.trees()[0].branches()[1].messages()[0].id();
+    
+    state.focus_message(target_message);
+
+    // Should find and switch to correct tree and branch
+    assert_eq!(state.current_tree_id, Some(tree1_id));
+    assert_eq!(state.current_branch_id, Some(branch1b_id));
+}
+
+#[test]
+fn cross_context_focus_preserves_scroll_request() {
+    let dialogue = create_multi_tree_dialogue();
+    let mut state = AppState {
+        dialogue,
+        mode: Mode::Normal,
+        current_tree_id: None,
+        current_branch_id: None,
+        focused_message_id: None,
+        scroll_offset: 10, // Start with some scroll offset
+        pending_scrolling_request: None,
+        error_message: None,
+        edit_textarea: None,
+        highlight_cache: Default::default(),
+        height_cache: Default::default(),
+        config: Config::default(),
+        model_info: ModelInfo::default(),
+        scrollbar_state: Default::default(),
+    };
+
+    // Set up current context
+    let tree1_id = state.dialogue.trees()[0].id();
+    let branch1a_id = state.dialogue.trees()[0].branches()[0].id();
+    state.current_tree_id = Some(tree1_id);
+    state.current_branch_id = Some(branch1a_id);
+
+    // Focus on message in different tree
+    let tree2_message = state.dialogue.trees()[1].branches()[0].messages()[2].id();
+    state.focus_message(tree2_message);
+
+    // Should preserve scroll offset but set scroll request
+    assert_eq!(state.scroll_offset, 10);
+    use frond::app::state::ScrollingRequest;
+    assert_eq!(
+        state.pending_scrolling_request,
+        Some(ScrollingRequest::ScrollToMessage(tree2_message))
+    );
+}
