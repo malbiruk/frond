@@ -1,39 +1,105 @@
 use super::utils::textarea_operation;
 use crate::app::state::AppState;
+use cli_clipboard::{ClipboardContext, ClipboardProvider};
 
+// Public API - Simple delegation to textarea operations
 pub fn handle_undo(state: &mut AppState) {
-    textarea_operation(state, |textarea| {
+    simple_textarea_operation(state, |textarea| {
         textarea.undo();
     });
 }
 
 pub fn handle_redo(state: &mut AppState) {
-    textarea_operation(state, |textarea| {
+    simple_textarea_operation(state, |textarea| {
         textarea.redo();
     });
 }
 
 pub fn handle_copy(state: &mut AppState) {
-    handle_copy_or_cut_operation(state, "copy", |textarea| {
-        textarea.copy();
-    });
+    clipboard_operation(state, ClipboardOperation::Copy);
 }
 
 pub fn handle_cut(state: &mut AppState) {
-    handle_copy_or_cut_operation(state, "cut", |textarea| {
-        textarea.cut();
-    });
+    clipboard_operation(state, ClipboardOperation::Cut);
 }
 
 pub fn handle_paste(state: &mut AppState) {
-    match get_desktop_clipboard_text() {
-        Ok(desktop_text) if !desktop_text.is_empty() => {
+    paste_from_clipboard(state);
+}
+
+pub fn handle_select_all(state: &mut AppState) {
+    simple_textarea_operation(state, |textarea| {
+        textarea.select_all();
+    });
+}
+
+// Operation types
+enum ClipboardOperation {
+    Copy,
+    Cut,
+}
+
+impl ClipboardOperation {
+    fn name(&self) -> &'static str {
+        match self {
+            Self::Copy => "copy",
+            Self::Cut => "cut",
+        }
+    }
+
+    fn execute(&self, textarea: &mut tui_textarea::TextArea) {
+        match self {
+            Self::Copy => {
+                textarea.copy();
+            }
+            Self::Cut => {
+                textarea.cut();
+            }
+        }
+    }
+}
+
+// Core operations
+fn simple_textarea_operation<F>(state: &mut AppState, operation: F)
+where
+    F: FnOnce(&mut tui_textarea::TextArea),
+{
+    textarea_operation(state, operation);
+}
+
+fn clipboard_operation(state: &mut AppState, operation: ClipboardOperation) {
+    let mut clipboard_error = None;
+
+    textarea_operation(state, |textarea| {
+        if let Some(selected_text) = extract_selected_text(textarea) {
+            operation.execute(textarea);
+            
+            if let Err(e) = sync_to_desktop_clipboard(&selected_text) {
+                clipboard_error = Some(format!(
+                    "Failed to {} to clipboard: {}",
+                    operation.name(),
+                    e
+                ));
+            }
+        } else {
+            operation.execute(textarea);
+        }
+    });
+
+    if let Some(error) = clipboard_error {
+        state.error_message = Some(error);
+    }
+}
+
+fn paste_from_clipboard(state: &mut AppState) {
+    match read_desktop_clipboard() {
+        Ok(text) if !text.is_empty() => {
             textarea_operation(state, |textarea| {
-                textarea.insert_str(&desktop_text);
+                textarea.insert_str(&text);
             });
         }
-        Ok(_) | Err(_) => {
-            // Desktop clipboard empty or failed, silently use textarea's internal paste
+        _ => {
+            // Fall back to internal clipboard
             textarea_operation(state, |textarea| {
                 textarea.paste();
             });
@@ -41,112 +107,120 @@ pub fn handle_paste(state: &mut AppState) {
     }
 }
 
-pub fn handle_select_all(state: &mut AppState) {
-    textarea_operation(state, |textarea| {
-        textarea.select_all();
-    });
-}
-
-// Common operation for copy and cut that handles desktop clipboard integration
-fn handle_copy_or_cut_operation<F>(state: &mut AppState, operation: &str, textarea_op: F)
-where
-    F: FnOnce(&mut tui_textarea::TextArea),
-{
-    let mut clipboard_error: Option<String> = None;
-
-    textarea_operation(state, |textarea| {
-        // Get selected text before the operation
-        let selected_text = get_selected_text_if_any(textarea);
-
-        // Perform the textarea operation
-        textarea_op(textarea);
-
-        // Copy to desktop clipboard if we had selected text
-        if let Some(text) = selected_text {
-            if let Err(e) = copy_to_desktop_clipboard(&text) {
-                clipboard_error = Some(format!("Failed to {} to clipboard: {}", operation, e));
-            }
-        }
-    });
-
-    // Set error after the textarea operation if needed
-    if let Some(error) = clipboard_error {
-        state.error_message = Some(error);
-    }
-}
-
-// Extract selected text if any exists
-fn get_selected_text_if_any(textarea: &tui_textarea::TextArea) -> Option<String> {
-    textarea
-        .selection_range()
-        .map(|selection| get_selected_text(textarea, selection))
-}
-
-// Desktop clipboard operations
-fn copy_to_desktop_clipboard(text: &str) -> Result<(), Box<dyn std::error::Error>> {
-    use cli_clipboard::{ClipboardContext, ClipboardProvider};
+// Clipboard integration
+fn sync_to_desktop_clipboard(text: &str) -> Result<(), Box<dyn std::error::Error>> {
     let mut ctx = ClipboardContext::new()?;
     ctx.set_contents(text.to_owned())?;
     Ok(())
 }
 
-fn get_desktop_clipboard_text() -> Result<String, Box<dyn std::error::Error>> {
-    use cli_clipboard::{ClipboardContext, ClipboardProvider};
+fn read_desktop_clipboard() -> Result<String, Box<dyn std::error::Error>> {
     let mut ctx = ClipboardContext::new()?;
     ctx.get_contents()
 }
 
-fn get_selected_text(
+// Text extraction
+fn extract_selected_text(textarea: &tui_textarea::TextArea) -> Option<String> {
+    textarea
+        .selection_range()
+        .map(|range| build_selected_text(textarea, range))
+}
+
+fn build_selected_text(
     textarea: &tui_textarea::TextArea,
     selection: ((usize, usize), (usize, usize)),
 ) -> String {
     let lines = textarea.lines();
-    let ((start_row, start_col), (end_row, end_col)) = selection;
-
-    // Ensure start is before end
-    let ((start_row, start_col), (end_row, end_col)) =
-        if start_row < end_row || (start_row == end_row && start_col <= end_col) {
-            ((start_row, start_col), (end_row, end_col))
-        } else {
-            ((end_row, end_col), (start_row, start_col))
-        };
-
-    let mut result = String::new();
-
-    if start_row == end_row {
-        // Selection within single line
-        if let Some(line) = lines.get(start_row) {
-            let chars: Vec<char> = line.chars().collect();
-            if end_col <= chars.len() && start_col <= chars.len() {
-                result = chars[start_col..end_col].iter().collect();
-            }
-        }
+    let (start, end) = normalize_selection_range(selection);
+    
+    if is_single_line_selection(start, end) {
+        extract_single_line_text(lines, start, end)
     } else {
-        // Multi-line selection
-        for (line_idx, line) in lines.iter().enumerate() {
-            if line_idx < start_row || line_idx > end_row {
-                continue;
-            }
+        extract_multi_line_text(lines, start, end)
+    }
+}
 
+fn normalize_selection_range(
+    selection: ((usize, usize), (usize, usize)),
+) -> ((usize, usize), (usize, usize)) {
+    let ((start_row, start_col), (end_row, end_col)) = selection;
+    
+    if start_row < end_row || (start_row == end_row && start_col <= end_col) {
+        ((start_row, start_col), (end_row, end_col))
+    } else {
+        ((end_row, end_col), (start_row, start_col))
+    }
+}
+
+fn is_single_line_selection(start: (usize, usize), end: (usize, usize)) -> bool {
+    start.0 == end.0
+}
+
+fn extract_single_line_text(
+    lines: &[String],
+    start: (usize, usize),
+    end: (usize, usize),
+) -> String {
+    lines
+        .get(start.0)
+        .and_then(|line| {
             let chars: Vec<char> = line.chars().collect();
-            if line_idx == start_row {
-                // First line: from start_col to end
-                if start_col < chars.len() {
-                    result.push_str(&chars[start_col..].iter().collect::<String>());
-                }
-                result.push('\n');
-            } else if line_idx == end_row {
-                // Last line: from start to end_col
-                if end_col <= chars.len() {
-                    result.push_str(&chars[..end_col].iter().collect::<String>());
-                }
+            if end.1 <= chars.len() && start.1 <= chars.len() {
+                Some(chars[start.1..end.1].iter().collect())
             } else {
-                // Middle lines: entire line
-                result.push_str(line);
-                result.push('\n');
+                None
             }
+        })
+        .unwrap_or_default()
+}
+
+fn extract_multi_line_text(
+    lines: &[String],
+    start: (usize, usize),
+    end: (usize, usize),
+) -> String {
+    let mut result = String::new();
+    
+    for (line_idx, line) in lines.iter().enumerate() {
+        if line_idx < start.0 || line_idx > end.0 {
+            continue;
+        }
+        
+        append_line_segment(&mut result, line, line_idx, start, end);
+        
+        if line_idx < end.0 {
+            result.push('\n');
         }
     }
-
+    
     result
 }
+
+fn append_line_segment(
+    result: &mut String,
+    line: &str,
+    line_idx: usize,
+    start: (usize, usize),
+    end: (usize, usize),
+) {
+    let chars: Vec<char> = line.chars().collect();
+    
+    let segment = match line_idx {
+        idx if idx == start.0 => extract_from_position(&chars, start.1, chars.len()),
+        idx if idx == end.0 => extract_from_position(&chars, 0, end.1),
+        _ => line.to_string(),
+    };
+    
+    result.push_str(&segment);
+}
+
+fn extract_from_position(chars: &[char], start: usize, end: usize) -> String {
+    if start < chars.len() && end <= chars.len() {
+        chars[start..end].iter().collect()
+    } else if start < chars.len() {
+        chars[start..].iter().collect()
+    } else {
+        String::new()
+    }
+}
+

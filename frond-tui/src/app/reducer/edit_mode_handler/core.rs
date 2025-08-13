@@ -1,3 +1,5 @@
+use std::ops::ControlFlow;
+
 use crate::app::Mode;
 use crate::app::state::AppState;
 use crate::services::DialogueService;
@@ -11,72 +13,111 @@ pub fn handle_edit_mode_raw_input(state: &mut AppState, key_event: KeyEvent) {
 }
 
 pub fn handle_exit_current_mode(state: &mut AppState) {
-    // First check if there's an active selection - if so, cancel it instead of exiting
-    if let Some(ref mut textarea) = state.edit_textarea {
-        if textarea.is_selecting() {
-            textarea.cancel_selection();
-            return; // Stay in edit mode, just cancel selection
-        }
+    if let ControlFlow::Break(_) = remove_active_selection(state) {
+        return;
     }
 
-    // No selection active, proceed with normal exit behavior
     exit_to_normal_mode(state);
 }
 
+fn remove_active_selection(state: &mut AppState) -> ControlFlow<()> {
+    if let Some(ref mut textarea) = state.edit_textarea {
+        if textarea.is_selecting() {
+            textarea.cancel_selection();
+            return ControlFlow::Break(());
+        }
+    }
+    ControlFlow::Continue(())
+}
+
 fn exit_to_normal_mode(state: &mut AppState) {
-    // Check if we're in append mode before processing (editing last User message)
     let is_append_mode = state.is_append_mode();
 
-    if let (Some(textarea), Some(message_id), Some(branch_id)) = (
-        &state.edit_textarea,
-        state.focused_message_id,
-        state.current_branch_id,
-    ) {
-        // Get content as-is, preserving all newlines the user typed
-        let content = textarea.lines().join("\n").trim().to_string();
-
-        if content.is_empty() {
-            if let Err(e) =
-                DialogueService::delete_message(&mut state.dialogue, message_id, branch_id)
-            {
-                state.error_message = Some(format!("Failed to delete message: {}", e));
+    if let Some(result) = process_edit_content(state) {
+        match result {
+            EditResult::Error(error) => {
+                state.error_message = Some(error);
                 return;
             }
-            // Invalidate cache for deleted message
-            state.invalidate_message_highlight(message_id);
-            state.invalidate_message_height(message_id);
-            if let Some(index) = state.get_message_index(message_id) {
-                state.update_focused_message_after_deletion(index);
+            EditResult::Deleted(message_id) => {
+                invalidate_message_caches(state, message_id);
+                if let Some(index) = state.get_message_index(message_id) {
+                    state.update_focused_message_after_deletion(index);
+                }
             }
-        } else if let Err(e) =
-            DialogueService::edit_message(&mut state.dialogue, message_id, content)
-        {
-            state.error_message = Some(format!("Failed to save message: {}", e));
-            return;
-        } else {
-            // Invalidate cache for edited message
-            state.invalidate_message_highlight(message_id);
-            state.invalidate_message_height(message_id);
+            EditResult::Updated(message_id) => {
+                invalidate_message_caches(state, message_id);
+            }
         }
     }
 
+    reset_edit_state(state);
+    set_scrolling_after_exit(state, is_append_mode);
+}
+
+enum EditResult {
+    Deleted(uuid::Uuid),
+    Updated(uuid::Uuid),
+    Error(String),
+}
+
+fn process_edit_content(state: &mut AppState) -> Option<EditResult> {
+    let (textarea, message_id, branch_id) = (
+        state.edit_textarea.as_ref()?,
+        state.focused_message_id?,
+        state.current_branch_id?,
+    );
+
+    let content = textarea.lines().join("\n").trim().to_string();
+
+    if content.is_empty() {
+        delete_empty_message(state, message_id, branch_id)
+    } else {
+        update_message_content(state, message_id, content)
+    }
+}
+
+fn delete_empty_message(
+    state: &mut AppState,
+    message_id: uuid::Uuid,
+    branch_id: uuid::Uuid,
+) -> Option<EditResult> {
+    match DialogueService::delete_message(&mut state.dialogue, message_id, branch_id) {
+        Ok(_) => Some(EditResult::Deleted(message_id)),
+        Err(e) => Some(EditResult::Error(format!("Failed to delete message: {}", e))),
+    }
+}
+
+fn update_message_content(
+    state: &mut AppState,
+    message_id: uuid::Uuid,
+    content: String,
+) -> Option<EditResult> {
+    match DialogueService::edit_message(&mut state.dialogue, message_id, content) {
+        Ok(_) => Some(EditResult::Updated(message_id)),
+        Err(e) => Some(EditResult::Error(format!("Failed to save message: {}", e))),
+    }
+}
+
+fn invalidate_message_caches(state: &mut AppState, message_id: uuid::Uuid) {
+    state.invalidate_message_highlight(message_id);
+    state.invalidate_message_height(message_id);
+}
+
+fn reset_edit_state(state: &mut AppState) {
     state.mode = Mode::Normal;
     state.error_message = None;
     state.edit_textarea = None;
+}
 
-    if is_append_mode {
-        // Scroll to the last message after exiting append mode
-        // This centers the lower part of the message if it's big
-        state.pending_scrolling_request =
-            Some(crate::app::state::ScrollingRequest::ScrollToLastMessage);
+fn set_scrolling_after_exit(state: &mut AppState, is_append_mode: bool) {
+    use crate::app::state::ScrollingRequest;
+    
+    state.pending_scrolling_request = if is_append_mode {
+        Some(ScrollingRequest::ScrollToLastMessage)
     } else {
-        // For regular edit mode, focus the just edited message
-        if let Some(message_id) = state.focused_message_id {
-            state.pending_scrolling_request = Some(
-                crate::app::state::ScrollingRequest::ScrollToMessage(message_id),
-            );
-        }
-    }
+        state.focused_message_id.map(ScrollingRequest::ScrollToMessage)
+    };
 }
 
 pub fn handle_submit_message(state: &mut AppState) {
