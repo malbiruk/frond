@@ -30,7 +30,7 @@ fn action_registry_provides_actions_for_edit_mode() {
     let actions = registry.get_schemas_for_mode(Mode::Edit);
 
     let action_ids: Vec<&str> = actions.iter().map(|(id, _)| *id).collect();
-    assert!(action_ids.contains(&"exit_mode"));
+    assert!(action_ids.contains(&"exit_edit_mode"));
     assert!(action_ids.contains(&"quit"));
 }
 

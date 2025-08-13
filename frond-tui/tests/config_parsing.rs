@@ -5,7 +5,8 @@
 
 use frond::app::Mode;
 use frond::config::{
-    Config, Keybindings, Theme, keybindings::parse_key_chord, keybindings::parse_mode, keybindings::DefaultKeybinding,
+    Config, Keybindings, Theme, keybindings::DefaultKeybinding, keybindings::parse_key_chord,
+    keybindings::parse_mode,
 };
 use frond::input::KeyChord;
 use ratatui::crossterm::event::{KeyCode, KeyModifiers};
@@ -174,10 +175,7 @@ fn parse_key_chord_handles_edge_cases() {
 
 #[test]
 fn parse_mode_handles_valid_modes() {
-    let test_cases = vec![
-        ("normal", Mode::Normal),
-        ("edit", Mode::Edit),
-    ];
+    let test_cases = vec![("normal", Mode::Normal), ("edit", Mode::Edit)];
 
     for (input, expected_mode) in test_cases {
         let result = parse_mode(input);
@@ -237,7 +235,10 @@ fn keybindings_default_contains_expected_mappings() {
         normal_bindings.get("delete_message").unwrap()[0].key,
         KeyCode::Char('d')
     );
-    assert_eq!(normal_bindings.get("scroll_up").unwrap()[0].key, KeyCode::Up);
+    assert_eq!(
+        normal_bindings.get("scroll_up").unwrap()[0].key,
+        KeyCode::Up
+    );
     assert_eq!(
         normal_bindings.get("scroll_down").unwrap()[0].key,
         KeyCode::Down
@@ -280,7 +281,7 @@ fn keybindings_set_keys_for_action_updates_mapping() {
 
     let action = keybindings.get_action_for_key(Mode::Normal, &new_keys[0]);
     assert_eq!(action, Some("edit_message".to_string()));
-    
+
     let action = keybindings.get_action_for_key(Mode::Normal, &new_keys[1]);
     assert_eq!(action, Some("edit_message".to_string()));
 }
@@ -289,8 +290,14 @@ fn keybindings_set_keys_for_action_updates_mapping() {
 fn keybindings_from_config_parses_correctly() {
     let mut config_map = HashMap::new();
     let mut normal_actions = HashMap::new();
-    normal_actions.insert("edit_message".to_string(), DefaultKeybinding::Single("ctrl-e"));
-    normal_actions.insert("delete_message".to_string(), DefaultKeybinding::Single("shift-d"));
+    normal_actions.insert(
+        "edit_message".to_string(),
+        DefaultKeybinding::Single("ctrl-e"),
+    );
+    normal_actions.insert(
+        "delete_message".to_string(),
+        DefaultKeybinding::Single("shift-d"),
+    );
     config_map.insert("normal".to_string(), normal_actions);
 
     let result = Keybindings::from_config(config_map);
@@ -300,14 +307,21 @@ fn keybindings_from_config_parses_correctly() {
     let edit_keys = keybindings.get_keys_for_action(Mode::Normal, "edit_message");
     assert!(edit_keys.is_some());
     assert_eq!(edit_keys.unwrap()[0].key, KeyCode::Char('e'));
-    assert!(edit_keys.unwrap()[0].modifiers.contains(KeyModifiers::CONTROL));
+    assert!(
+        edit_keys.unwrap()[0]
+            .modifiers
+            .contains(KeyModifiers::CONTROL)
+    );
 }
 
 #[test]
 fn keybindings_from_config_handles_invalid_input() {
     let mut config_map = HashMap::new();
     let mut invalid_actions = HashMap::new();
-    invalid_actions.insert("test_action".to_string(), DefaultKeybinding::Single("invalid-key"));
+    invalid_actions.insert(
+        "test_action".to_string(),
+        DefaultKeybinding::Single("invalid-key"),
+    );
     config_map.insert("normal".to_string(), invalid_actions);
 
     let result = Keybindings::from_config(config_map);
@@ -319,7 +333,7 @@ fn keybindings_edit_mode_has_exit_mapping() {
     let keybindings = Keybindings::default();
 
     let edit_mode = Mode::Edit;
-    let exit_keys = keybindings.get_keys_for_action(edit_mode, "exit_mode");
+    let exit_keys = keybindings.get_keys_for_action(edit_mode, "exit_edit_mode");
     assert!(exit_keys.is_some());
     assert_eq!(exit_keys.unwrap()[0].key, KeyCode::Esc);
 }
@@ -352,7 +366,7 @@ fn config_get_keys_for_action_works_across_modes() {
     assert_eq!(keys.unwrap()[0].key, KeyCode::Char('e'));
 
     // Edit mode action
-    let keys = config.get_keys_for_action(Mode::Edit, "exit_mode");
+    let keys = config.get_keys_for_action(Mode::Edit, "exit_edit_mode");
     assert!(keys.is_some());
     assert_eq!(keys.unwrap()[0].key, KeyCode::Esc);
 
@@ -415,7 +429,7 @@ fn config_handles_mode_specific_keybindings() {
 
     // Same action ID should work in different modes if bound
     let normal_exit = config.get_keys_for_action(Mode::Normal, "quit");
-    let edit_exit = config.get_keys_for_action(Mode::Edit, "exit_mode");
+    let edit_exit = config.get_keys_for_action(Mode::Edit, "exit_edit_mode");
 
     assert!(normal_exit.is_some());
     assert!(edit_exit.is_some());
@@ -429,11 +443,7 @@ fn keybindings_mode_isolation_works() {
 
     let key = KeyChord::char('t');
     keybindings.set_keys_for_action(Mode::Normal, "test_normal".to_string(), vec![key.clone()]);
-    keybindings.set_keys_for_action(
-        Mode::Edit,
-        "test_edit".to_string(),
-        vec![key.clone()],
-    );
+    keybindings.set_keys_for_action(Mode::Edit, "test_edit".to_string(), vec![key.clone()]);
 
     // Same key should resolve to different actions in different modes
     let normal_action = keybindings.get_action_for_key(Mode::Normal, &key);

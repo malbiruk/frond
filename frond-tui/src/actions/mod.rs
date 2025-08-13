@@ -118,11 +118,7 @@ impl ActionRegistry {
                 "delete_message",
                 "show_help",
             ],
-            Mode::Edit => vec![
-                "submit_message",
-                "show_help", 
-                "exit_mode",
-            ],
+            Mode::Edit => vec!["submit_message", "show_help", "exit_edit_mode"],
         };
 
         essential_order

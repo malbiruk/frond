@@ -55,7 +55,7 @@ pub fn default_keybindings_config() -> HashMap<String, HashMap<String, DefaultKe
             "edit",
             &[
                 // Mode operations
-                ("exit_mode", Single("esc")),
+                ("exit_edit_mode", Single("esc")),
                 ("submit_message", Single("alt-enter")),
                 // Character operations
                 ("delete_char", Single("backspace")),

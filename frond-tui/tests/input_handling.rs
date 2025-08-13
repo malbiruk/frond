@@ -208,7 +208,7 @@ fn uppercase_h_and_l_work_in_normal_mode() {
     // Test that uppercase H and L work (they should map to tree navigation)
     let shift_h = KeyEvent::new(KeyCode::Char('H'), KeyModifiers::SHIFT);
     let shift_l = KeyEvent::new(KeyCode::Char('L'), KeyModifiers::SHIFT);
-    
+
     let h_action = handler.handle_input(shift_h, Mode::Normal);
     let l_action = handler.handle_input(shift_l, Mode::Normal);
 
@@ -261,7 +261,7 @@ fn handler_provides_essential_actions_for_edit_mode() {
 
     let action_ids: Vec<&str> = essentials.iter().map(|(id, _)| *id).collect();
     assert!(
-        action_ids.contains(&"exit_mode"),
+        action_ids.contains(&"exit_edit_mode"),
         "Should include exit action"
     );
 }

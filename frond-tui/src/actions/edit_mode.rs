@@ -222,7 +222,7 @@ define_actions! {
 
         // Mode operations
         ExitCurrentMode {
-            id: "exit_mode",
+            id: "exit_edit_mode",
             name: "exit mode",
             description: "exit the current mode",
         },

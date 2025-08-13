@@ -15,7 +15,7 @@ fn action_registry_creates_successfully() {
     // Should be able to get some schemas
     assert!(registry.get_schema("scroll_up").is_some());
     assert!(registry.get_schema("quit").is_some());
-    assert!(registry.get_schema("exit_mode").is_some());
+    assert!(registry.get_schema("exit_edit_mode").is_some());
 }
 
 #[test]
@@ -85,7 +85,7 @@ fn schemas_are_available_in_correct_modes() {
     assert!(normal_ids.contains(&"edit_message"));
 
     // Should not include edit mode specific actions
-    assert!(!normal_ids.contains(&"exit_mode"));
+    assert!(!normal_ids.contains(&"exit_edit_mode"));
 }
 
 #[test]
