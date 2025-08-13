@@ -6,6 +6,10 @@ All notable changes to Frond will be documented in this file.
 
 ### frond-tui
 
+#### 2025-08-13
+- Added undo/redo functionality for normal mode
+- Enhanced focus management to work across different trees and branches
+
 #### 2025-08-09
 - Added hierarchical caching system for improved rendering performance
 - Added edit and append modes for message modification
