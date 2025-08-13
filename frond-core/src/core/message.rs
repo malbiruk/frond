@@ -24,6 +24,15 @@ impl Message {
         }
     }
 
+    pub fn with_id(id: Uuid, content: impl Into<String>, role: Role) -> Self {
+        Message {
+            id,
+            content: content.into(),
+            role,
+            is_hidden: false,
+        }
+    }
+
     pub fn id(&self) -> Uuid {
         self.id
     }

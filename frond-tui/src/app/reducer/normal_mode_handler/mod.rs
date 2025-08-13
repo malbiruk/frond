@@ -1,7 +1,8 @@
-mod scrolling;
-mod mode_transitions;
 mod message_actions;
+mod mode_transitions;
 mod navigation;
+mod scrolling;
+mod undo_redo;
 
 use crate::actions::NormalModeAction;
 use crate::app::state::AppState;
@@ -18,12 +19,16 @@ pub fn handle_normal_mode_action(state: &mut AppState, action: NormalModeAction)
         NormalModeAction::ScrollToTop => scrolling::handle_scroll_to_top(state),
         NormalModeAction::ScrollToBottom => scrolling::handle_scroll_to_bottom(state),
         NormalModeAction::ScrollToNextMessage => scrolling::handle_scroll_to_next_message(state),
-        NormalModeAction::ScrollToPreviousMessage => scrolling::handle_scroll_to_previous_message(state),
+        NormalModeAction::ScrollToPreviousMessage => {
+            scrolling::handle_scroll_to_previous_message(state)
+        }
 
         // Mode transitions
         NormalModeAction::EnterEditMode => mode_transitions::handle_enter_edit_mode(state),
         NormalModeAction::EnterAppendMode => mode_transitions::handle_enter_append_mode(state),
-        NormalModeAction::EnterCommandPalette => mode_transitions::handle_enter_command_palette(state),
+        NormalModeAction::EnterCommandPalette => {
+            mode_transitions::handle_enter_command_palette(state)
+        }
 
         // Message actions that use frond-core
         NormalModeAction::DeleteMessage => message_actions::handle_delete_message(state),
@@ -36,5 +41,9 @@ pub fn handle_normal_mode_action(state: &mut AppState, action: NormalModeAction)
         NormalModeAction::PrevBranch => navigation::handle_prev_branch(state),
         NormalModeAction::NextTree => navigation::handle_next_tree(state),
         NormalModeAction::PrevTree => navigation::handle_prev_tree(state),
+
+        // Undo/Redo actions
+        NormalModeAction::Undo => undo_redo::handle_undo(state),
+        NormalModeAction::Redo => undo_redo::handle_redo(state),
     }
 }

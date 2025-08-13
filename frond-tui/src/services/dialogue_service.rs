@@ -30,8 +30,10 @@ impl DialogueService {
         branch_id: Uuid,
         content: String,
     ) -> Result<(), String> {
+        let message_id = Uuid::new_v4();
         let action = Action::Branch(BranchAction::AppendMessage {
             branch_id,
+            message_id,
             message_content: content,
         });
 
@@ -103,13 +105,13 @@ impl DialogueService {
             .map_err(|e| format!("Failed to show message: {}", e))
     }
 
-    pub fn undo(dialogue: &mut Dialogue) -> Result<(), String> {
+    pub fn undo(dialogue: &mut Dialogue) -> Result<Option<frond_core::Action>, String> {
         dialogue
             .undo_action()
             .map_err(|e| format!("Failed to undo: {}", e))
     }
 
-    pub fn redo(dialogue: &mut Dialogue) -> Result<(), String> {
+    pub fn redo(dialogue: &mut Dialogue) -> Result<Option<frond_core::Action>, String> {
         dialogue
             .redo_action()
             .map_err(|e| format!("Failed to redo: {}", e))

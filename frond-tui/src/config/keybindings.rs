@@ -46,6 +46,8 @@ pub fn default_keybindings_config() -> HashMap<String, HashMap<String, DefaultKe
                 ("prev_tree", Multiple(&["shift-left", "H"])),
                 ("next_tree", Multiple(&["shift-right", "L"])),
                 ("command_palette", Single("ctrl-p")),
+                ("normal_undo", Single("ctrl-z")),
+                ("normal_redo", Single("ctrl-y")),
                 ("quit", Multiple(&["q", "ctrl-c"])),
             ][..],
         ),

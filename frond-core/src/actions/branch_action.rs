@@ -24,6 +24,7 @@ pub enum BranchAction {
     // Message management actions (branch manages its messages)
     AppendMessage {
         branch_id: Uuid,
+        message_id: Uuid,
         message_content: String,
     },
     InsertMessageAtIndex {
@@ -65,8 +66,9 @@ impl Dialogue {
             }
             BranchAction::AppendMessage {
                 branch_id,
+                message_id,
                 message_content,
-            } => self.append_message(*branch_id, message_content.clone()),
+            } => self.append_message(*branch_id, *message_id, message_content.clone()),
             BranchAction::InsertMessageAtIndex {
                 branch_id,
                 message_index,
@@ -103,7 +105,7 @@ impl Dialogue {
                 branch_id,
                 old_description,
             } => self.undo_clear_branch_description(*branch_id, old_description.clone()),
-            BranchAction::AppendMessage { branch_id, .. } => self.undo_append_message(*branch_id),
+            BranchAction::AppendMessage { branch_id, message_id, .. } => self.undo_append_message(*branch_id, *message_id),
             BranchAction::InsertMessageAtIndex {
                 branch_id, message, ..
             } => self.undo_insert_message_at_index(*branch_id, message.clone()),
@@ -163,6 +165,7 @@ impl Dialogue {
     fn append_message(
         &mut self,
         branch_id: Uuid,
+        message_id: Uuid,
         message_content: String,
     ) -> Result<(), DialogueError> {
         let branch = self
@@ -171,7 +174,7 @@ impl Dialogue {
                 crate::core::error::TreeError::BranchNotFound(branch_id),
             ))?;
 
-        let message = Message::new(message_content, crate::core::message::Role::User);
+        let message = Message::with_id(message_id, message_content, crate::core::message::Role::User);
         branch.add_message(message);
         Ok(())
     }
@@ -218,20 +221,15 @@ impl Dialogue {
         Ok(())
     }
 
-    fn undo_append_message(&mut self, branch_id: Uuid) -> Result<(), DialogueError> {
+    fn undo_append_message(&mut self, branch_id: Uuid, message_id: Uuid) -> Result<(), DialogueError> {
         let branch = self
             .get_branch_by_id_mut(branch_id)
             .ok_or(DialogueError::Tree(
                 crate::core::error::TreeError::BranchNotFound(branch_id),
             ))?;
 
-        // Remove the last message (which should be the one we just added)
-        if !branch.messages().is_empty() {
-            if let Some(last_message) = branch.messages().get(branch.messages().len() - 1) {
-                let last_id = last_message.id();
-                branch.remove_message_by_id(last_id);
-            }
-        }
+        // Remove the message with the specific ID
+        branch.remove_message_by_id(message_id);
         Ok(())
     }
 

@@ -143,21 +143,25 @@ impl Dialogue {
         Ok(())
     }
 
-    pub fn undo_action(&mut self) -> Result<(), DialogueError> {
+    pub fn undo_action(&mut self) -> Result<Option<Action>, DialogueError> {
         if self.action_pos > 0 {
             self.action_pos -= 1;
             let action = self.action_stack[self.action_pos].clone();
             self.reduce_action_undo(&action)?;
+            Ok(Some(action))
+        } else {
+            Ok(None)
         }
-        Ok(())
     }
 
-    pub fn redo_action(&mut self) -> Result<(), DialogueError> {
+    pub fn redo_action(&mut self) -> Result<Option<Action>, DialogueError> {
         if self.action_pos < self.action_stack.len() {
             let action = self.action_stack[self.action_pos].clone();
             self.reduce_action_apply(&action)?;
             self.action_pos += 1;
+            Ok(Some(action))
+        } else {
+            Ok(None)
         }
-        Ok(())
     }
 }

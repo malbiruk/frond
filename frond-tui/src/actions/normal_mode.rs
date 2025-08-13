@@ -121,5 +121,17 @@ define_actions! {
             name: "previous tree",
             description: "switch to the previous tree", 
         },
+
+        // Undo/Redo actions
+        Undo {
+            id: "normal_undo",
+            name: "undo",
+            description: "undo the last action",
+        },
+        Redo {
+            id: "normal_redo",
+            name: "redo",
+            description: "redo the previously undone action",
+        },
     }
 }
